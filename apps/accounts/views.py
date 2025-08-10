@@ -28,3 +28,9 @@ class ChangePasswordView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+# class WhishListView(generics.ListCreateAPIView):
+#     serializer_class = Wh
+
+class AdressListView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
+    pass
