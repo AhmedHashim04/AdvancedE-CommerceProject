@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+dist/
+build/
+*.egg
+bfg.jar
+
+# Django:
+*.pyc
+*.pyo
+*.log
+*.pot
+*.py[cod]
+*.so
+__pycache__/
+
+.env
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Windows
+Thumbs.db
+
+# Test
+.coverage
+htmlcov/
+*.pytest_cache/
+
+*.sql
+DATA_Backup.env
+.env

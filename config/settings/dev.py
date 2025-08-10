@@ -1,0 +1,36 @@
+from .base import *
+from decouple import config  
+
+
+
+# ----------- DATABASE -----------
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+# ----------- HOSTS & CORS -----------
+
+ALLOWED_HOSTS = [config('HOST'),'127.0.0.1']
+
+# ----------- CACHE -----------
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-sample-cache',
+    }
+}
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#         'LOCATION': '/var/tmp/django_cache',
+#     }
+# }
+# ----------- TOOLBAR -----------
+
+# ----------- CELERY -----------
