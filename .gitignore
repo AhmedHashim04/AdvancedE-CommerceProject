@@ -12,7 +12,8 @@ dist/
 build/
 *.egg
 bfg.jar
-
+media/
+mediafiles
 # Django:
 *.pyc
 *.pyo

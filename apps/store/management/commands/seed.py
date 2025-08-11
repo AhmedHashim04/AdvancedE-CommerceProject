@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 from faker import Faker
 import requests
 import random
-from store.models import Product, Brand, Category, Tag, ProductImage, ProductColor, ShippingClass
+from apps.store.models import Product, Brand, Category, Tag, ProductImage, ProductColor, ShippingClass
 
 fake = Faker()
 

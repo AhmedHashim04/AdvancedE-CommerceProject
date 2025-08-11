@@ -25,8 +25,11 @@ urlpatterns += [
 
 ]
 
-
+from apps.store.views import ProductListView
 urlpatterns += [
+
+    path("products/", ProductListView.as_view(), name="product-list"),
+    
 ]
 
 urlpatterns += [

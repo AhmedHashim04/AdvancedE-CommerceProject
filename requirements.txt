@@ -4,6 +4,7 @@ djangorestframework
 djangorestframework-simplejwt
 djangorestframework-simplejwt[crypto]
 django-rest-framework-simplejwt-blacklist
+django-filter
 django-allauth
 dj-rest-auth
 
