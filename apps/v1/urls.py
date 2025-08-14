@@ -25,10 +25,11 @@ urlpatterns += [
 
 ]
 
-from apps.store.views import ProductListView
+from apps.store.views import ProductListView, ProductDetailView
 urlpatterns += [
 
     path("products/", ProductListView.as_view(), name="product-list"),
+    path("<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
     
 ]
 
