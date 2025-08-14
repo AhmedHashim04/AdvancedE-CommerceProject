@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import Product, ShippingClass, ProductColor
+from django.core.cache import cache
+import hashlib
+
 
 class ShippingClassSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,6 +18,9 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     brand_name = serializers.ReadOnlyField(source='brand.name')
     shipping_class = ShippingClassSerializer()
+    tags = serializers.SerializerMethodField()
+    color_options = serializers.SerializerMethodField()
+    gallery = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -30,9 +36,42 @@ class ProductSerializer(serializers.ModelSerializer):
         # depth = 1
 
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['tags'] = [tag.name for tag in instance.tags.all()]
-        data['color_options'] = [color.name for color in instance.color_options.all()]
-        data['gallery'] = [photo.image.url for photo in instance.gallery.all()]
-        return data
+
+    def get_tags(self, obj):
+        return [tag.name for tag in obj.tags.all()]
+
+    def get_color_options(self, obj):
+        return [color.name for color in obj.color_options.all()]
+
+    def get_gallery(self, obj):
+        return [photo.image.url for photo in obj.gallery.all()]
+
+    # # Slow
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     data['tags'] = [tag.name for tag in instance.tags.all()]
+    #     data['color_options'] = [color.name for color in instance.color_options.all()]
+    #     data['gallery'] = [photo.image.url for photo in instance.gallery.all()]
+    #     return data
+
+    # # little Slow
+    # def to_representation(self, instance):
+    #     # 1) بناء Key للكاش
+    #     cache_key = f"product_serializer:{instance.pk}:{instance.updated_at.timestamp()}"
+    #     data = cache.get(cache_key)
+
+    #     if data is not None:
+    #         return data  # 2) لو موجود في الكاش يرجع على طول
+
+    #     # 3) اعمل serialization عادي
+    #     data = super().to_representation(instance)
+
+    #     # علاقات إضافية
+    #     data['tags'] = [tag.name for tag in instance.tags.all()]
+    #     data['color_options'] = [color.name for color in instance.color_options.all()]
+    #     data['gallery'] = [photo.image.url for photo in instance.gallery.all()]
+
+    #     # 4) احفظ في الكاش (مثلاً لمدة 10 دقايق)
+    #     cache.set(cache_key, data, timeout=600)
+
+    #     return data
