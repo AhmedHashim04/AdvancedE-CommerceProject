@@ -58,7 +58,6 @@ class ProductListView(generics.ListAPIView):
 
         return response
 
-
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer
     lookup_field = 'slug'

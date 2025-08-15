@@ -9,7 +9,7 @@ class Cart:
     def __init__(self, request):
         self.request = request
         self.session = request.session
-        self.session_id = settings.CART_SESSION_ID
+        self.session_id = settings.CART_SESSION_ID # CART_ID
         self.cart = self._get_or_create_cart()
 
     def _get_or_create_cart(self):
@@ -17,7 +17,7 @@ class Cart:
             cache_key = f"cart_user_{self.request.user.id}"
         else:
             cache_key = f"cart_session_{self.session.session_key}"
-            
+
         cart = cache.get(cache_key)
 
         if cart is None:
@@ -30,7 +30,7 @@ class Cart:
             else:
                 cache_key = f"cart_session_{self.session.session_key}"
 
-            cache.set(cache_key, cart, timeout=3600)
+            cache.set(cache_key, cart, timeout=3600) # 1 H
 
         return cart
 
@@ -41,8 +41,8 @@ class Cart:
 
         slug = str(product.slug)
         price = Decimal(product.price)
-        discount = Decimal(product.discount)
-        final_price = Decimal(product.price_after_discount)
+        discount = Decimal(product.discount_percentage)
+        final_price = Decimal(product.compare_at_price)
 
         item = self.cart.get(slug)
 

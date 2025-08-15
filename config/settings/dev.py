@@ -31,6 +31,10 @@ CACHES = {
 #         'LOCATION': '/var/tmp/django_cache',
 #     }
 # }
+
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # مدة الحياة بالثواني (هنا أسبوع)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # لو True يتم المسح عند غلق المتصفح
+
 # ----------- TOOLBAR -----------
 
 # ----------- CELERY -----------

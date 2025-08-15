@@ -158,7 +158,7 @@ AUTH_PASSWORD_VALIDATORS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-CART_SESSION_ID = "cart"
+CART_SESSION_ID = "CART_ID"
 
 
 
