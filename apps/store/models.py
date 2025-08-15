@@ -1,6 +1,12 @@
 from django.db import models
+from django.db.models import Q
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
+from promotions.models import Promotion, FlashSale
+from django.utils import timezone
+
+
+from decimal import Decimal, ROUND_HALF_UP
 
 # -------------------------------------
 # Related Models
@@ -78,56 +84,48 @@ class ShippingClass(models.Model):
 # Main Product Model
 # -------------------------------------
 
+    # owner =
 class Product(models.Model):
-    # Basic Info
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     short_description = models.CharField(max_length=255, blank=True)
-    sku = models.CharField(max_length=50, unique=True)
+    sku = models.CharField(max_length=50, unique=True, db_index=True)
     barcode = models.CharField(max_length=50, blank=True, null=True)
-    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, related_name="products")
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name="products")
-    tags = models.ManyToManyField(Tag, blank=True)
+    brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, related_name="products")
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
+    tags = models.ManyToManyField('Tag', blank=True)
 
-    # Pricing
     price = models.DecimalField(max_digits=10, decimal_places=2)
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    discount_percentage = models.PositiveIntegerField(blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     currency = models.CharField(max_length=3, default="EGP")
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
-    # Stock
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
     is_in_stock = models.BooleanField(default=True)
     allow_backorder = models.BooleanField(default=False)
 
-    # Media
     main_image = models.ImageField(upload_to="products/main_images/", blank=True, null=True)
-    gallery = models.ManyToManyField(ProductImage, blank=True)
+    gallery = models.ManyToManyField('ProductImage', blank=True)
     video_url = models.URLField(blank=True, null=True)
     view_360_url = models.URLField(blank=True, null=True)
 
-    # Shipping
     weight = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     width = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     height = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    shipping_class = models.ForeignKey(ShippingClass, on_delete=models.SET_NULL, null=True, blank=True)
+    shipping_class = models.ForeignKey('ShippingClass', on_delete=models.SET_NULL, null=True, blank=True)
 
-    # SEO
     meta_title = models.CharField(max_length=255, blank=True)
     meta_description = models.TextField(blank=True)
     meta_keywords = models.CharField(max_length=255, blank=True)
 
-    # Variants & Attributes
     has_variants = models.BooleanField(default=False)
     attributes = models.JSONField(blank=True, null=True)
-    color_options = models.ManyToManyField(ProductColor, blank=True)
+    color_options = models.ManyToManyField('ProductColor', blank=True)
 
-    # Admin & Stats
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -135,17 +133,45 @@ class Product(models.Model):
     views_count = models.PositiveIntegerField(default=0)
     sales_count = models.PositiveIntegerField(default=0)
 
+    is_on_sale = models.BooleanField(default=False)
+    flash_sale = models.ForeignKey(FlashSale, on_delete=models.SET_NULL, null=True, blank=True)
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
         self.is_in_stock = self.stock_quantity > 0
         super().save(*args, **kwargs)
 
-    def get_discounted_price(self):
-        """حساب السعر بعد الخصم"""
-        if self.discount_percentage:
-            return self.price - (self.price * self.discount_percentage / 100)
-        return self.price
+    def get_discounted_price(self, quantity=1):
+        base_price = Decimal(self.price)
+
+        # Flash Sale
+        if self.flash_sale and self.flash_sale.is_ongoing():
+            return (base_price * (Decimal(1) - Decimal(self.flash_sale.discount_percentage) / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Tiered & Promotions
+        now = timezone.now()
+        promotions = Promotion.objects.filter(
+            Q(products=self) | Q(categories=self.category) | Q(apply_to='all'),
+            start_date__lte=now,
+            end_date__gte=now,
+            is_active=True
+        ).exclude(excluded_products=self)
+
+        for promo in promotions:
+            if promo.discount_type == 'percentage' and promo.value:
+                return (base_price * (Decimal(1) - promo.value / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            elif promo.discount_type == 'fixed' and promo.value:
+                return max(base_price - promo.value, Decimal("0.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        return base_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        self.is_in_stock = self.stock_quantity > 0
+        super().save(*args, **kwargs)
 
     def get_seo_title(self):
         """إرجاع عنوان مناسب للـ SEO"""
@@ -155,5 +181,17 @@ class Product(models.Model):
         """تحقق إذا المخزون قليل"""
         return self.stock_quantity <= self.low_stock_threshold
 
+    # دالة للتحقق من توفر العروض
+    def active_promotions(self):
+        now = timezone.now()
+        return Promotion.objects.filter(
+            Q(products=self) | Q(categories=self.category),
+            start_date__lte=now,
+            end_date__gte=now,
+            is_active=True
+        ).exclude(excluded_products=self)
+    
+
     def __str__(self):
         return self.name
+
