@@ -3,6 +3,10 @@ from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 import json
+# operation in account ap 
+['register','login','logout','change_password','reset_password',
+ 'update_profile','update_address',"set_default_address","delete_address",
+ "add_address","edit_address"]
 
 COUNTRY_CHOICES = [
         ('AF', 'Afghanistan'),
@@ -246,7 +250,6 @@ COUNTRY_CHOICES = [
         ('ZM', 'Zambia'),
         ('ZW', 'Zimbabwe'),
     ]
-    
 
 class CustomUser(AbstractUser):
     address = models.ForeignKey("Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
@@ -256,17 +259,15 @@ class CustomUser(AbstractUser):
         return self.username
 
 class Address(models.Model):
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='addresses')
-    full_name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=20)
-    alternate_phone = models.CharField(max_length=11,blank=True,verbose_name=_("Alternate Phone Number (optional)"),)
-    country = models.CharField(max_length=100, choices=COUNTRY_CHOICES)
-    state = models.CharField(max_length=100, blank=True, null=True)
-    city = models.CharField(max_length=100)
-    address_line1 = models.CharField(max_length=255)
-    address_line2 = models.CharField(max_length=255, blank=True, null=True)
-    postal_code = models.CharField(max_length=20)
+    full_name = models.CharField(max_length=255, verbose_name=_("Full Name"),help_text=_("Full Name"))
+    phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
+    alternate_phone = models.CharField(max_length=11,blank=True,help_text=_("Alternate Phone Number (optional)"),verbose_name=_("Alternate Phone Number (optional)"),)
+    country = models.CharField(max_length=100, choices=COUNTRY_CHOICES,help_text=_("Country"),verbose_name=_("Country"))
+    state = models.CharField(max_length=100,help_text=_("State or City (optional)"),verbose_name=_("State or City"),blank=True, null=True)
+    village = models.CharField(max_length=100,help_text=_("Village (optional)"),verbose_name=_("Village"),blank=True, null=True)
+    address_line1 = models.CharField(max_length=255, verbose_name=_("Address Line 1"),help_text=_("Write detailed address that you want to deliver the order "))
+    postal_code = models.CharField(max_length=20,help_text=_("you can leave it empty if you don't know what postal code"),verbose_name=_("Postal Code"))
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -276,7 +277,7 @@ class Address(models.Model):
         ordering = ['-is_default', '-created_at']
 
     def __str__(self):
-        return f"{self.full_name} - {self.address_line1}, {self.city}"
+        return f"{self.full_name} - {self.address_line1}, {self.state}"
 
     def save(self, *args, **kwargs):
         if self.is_default:
@@ -289,8 +290,21 @@ class UserActivityLog(models.Model):
         ('login', 'Login'),
         ('logout', 'Logout'),
         ('view_product', 'View Product'),
+        ('view_category', 'View Category'),
+        ('search', 'Search'),
+        ('filter', 'Filter'),
+        ('compare', 'Compare'),
+        ('share', 'Share'),
         ('add_to_cart', 'Add to Cart'),
         ('add_to_wishlist', 'Add to Wishlist'),
+        ('view_cart', 'View Cart'),
+        ('view_wishlist', 'View Wishlist'),
+        ('coupon_applied', 'Coupon Applied'),
+        ('coupon_removed', 'Coupon Removed'),
+        ('add_address', 'Add Address'),
+        ('edit_address', 'Edit Address'),
+        ('delete_address', 'Delete Address'),
+        ('set_default_address', 'Set Default Address'),
         ('checkout', 'Checkout'),
         ('order_placed', 'Order Placed'),
         ('order_cancelled', 'Order Cancelled'),

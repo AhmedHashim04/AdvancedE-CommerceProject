@@ -2,7 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-
+from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 class Promotion(models.Model):
     DISCOUNT_TYPE_CHOICES = [
@@ -67,7 +68,7 @@ class Promotion(models.Model):
         blank=True,
         related_name='excluded_promotions'
     )
-    users = models.ManyToManyField('auth.User', blank=True)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
     # الفعالية الزمنية
     start_date = models.DateTimeField(default=timezone.now)
@@ -119,7 +120,7 @@ class LoyaltyProgram(models.Model):
         return self.name
 
 class LoyaltyPoints(models.Model):
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     points = models.PositiveIntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -148,7 +149,7 @@ class FlashSale(models.Model):
 
 
 class PromotionUsage(models.Model):
-    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE)
     order = models.ForeignKey('orders.Order', on_delete=models.CASCADE)
     product = models.ForeignKey('store.Product', on_delete=models.SET_NULL, null=True, blank=True)
