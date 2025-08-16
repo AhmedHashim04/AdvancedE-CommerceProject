@@ -32,11 +32,15 @@ urlpatterns += [
     path("reset-password-otp/", ResetPasswordOTPConfirmView.as_view(), name="reset-password-otp"),
 ]
 
-from apps.store.views import ProductListView, ProductDetailView
+from apps.store.views import ProductListView, ProductDetailView, WishlistListView, WishlistAddView, WishlistRemoveView
 urlpatterns += [
 
     path("products/", ProductListView.as_view(), name="product-list"),
     path("<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
+
+    path("wishlist/", WishlistListView.as_view(), name="wishlist-list"),
+    path("wishlist/add/", WishlistAddView.as_view(), name="wishlist-add"),
+    path("wishlist/remove/", WishlistRemoveView.as_view(), name="wishlist-remove"),
     
 ]
 

@@ -95,7 +95,6 @@ class ForgetPasswordView(generics.CreateAPIView):
             status=status.HTTP_200_OK,
         )
 
-
 class ResetPasswordConfirmView(generics.CreateAPIView):
     """
     The user opens the link in the JWT and enters a new password
@@ -115,10 +114,9 @@ class ResetPasswordConfirmView(generics.CreateAPIView):
             user = User.objects.get(id=payload["user_id"])
             user.password = make_password(new_password)
             user.save()
-            return Response({"detail": "Password has been changed successfully ✅"})
+            return Response({"detail": "Password has been changed successfully "})
         except User.DoesNotExist:
             return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
 
 class ResetPasswordOTPConfirmView(generics.CreateAPIView):
     """
@@ -141,12 +139,9 @@ class ResetPasswordOTPConfirmView(generics.CreateAPIView):
 
             user.password = make_password(new_password)
             user.save()
-            return Response({"detail": "Password has been changed using OTP ✅"})
+            return Response({"detail": "Password has been changed using OTP "})
         except User.DoesNotExist:
             return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-class WhishListView(generics.ListCreateAPIView):
-    pass
 
 class AdressListView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
     pass

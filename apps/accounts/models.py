@@ -293,8 +293,6 @@ class Address(models.Model):
         super().save(*args, **kwargs)
 
 
-
-
 class PasswordResetOTP(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     otp = models.CharField(max_length=6)

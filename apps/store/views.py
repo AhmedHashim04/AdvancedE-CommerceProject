@@ -1,9 +1,12 @@
 from .models import Product
 from rest_framework import generics
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import ProductSerializer
+from rest_framework.permissions import IsAuthenticated
 import hashlib
 import json
+from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter
@@ -160,5 +163,50 @@ class ProductDetailView(generics.RetrieveAPIView):
         self.request.session[session_key] = viewed_slugs
         self.request.session.modified = True
 
+
+class WishlistListView(generics.ListAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.wishlist.all()
+
+
+class WishlistAddView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        product = get_object_or_404(Product, id=request.data.get("product_id"))
+        request.user.wishlist.add(product)
+        return Response({"status": "added"})
+
+
+class WishlistRemoveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        product = get_object_or_404(Product, id=request.data.get("product_id"))
+        request.user.wishlist.remove(product)
+        return Response({"status": "removed"})
+
+
+# class WishlistViewSet(viewsets.ViewSet):
+#     permission_classes = [IsAuthenticated]
+
+#     def list(self, request):
+#         products = request.user.wishlist.all()
+#         serializer = ProductSerializer(products, many=True)
+#         return Response(serializer.data)
+
+#     @action(detail=True, methods=["post"])
+#     def toggle(self, request, pk=None):
+#         product = get_object_or_404(Product, pk=pk)
+#         wishlist = request.user.wishlist
+#         if product in wishlist.all():
+#             wishlist.remove(product)
+#             return Response({"status": "removed"})
+#         else:
+#             wishlist.add(product)
+#             return Response({"status": "added"})
 
 
