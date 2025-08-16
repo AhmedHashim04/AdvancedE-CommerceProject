@@ -259,7 +259,8 @@ class CustomUser(AbstractUser):
         return self.username
 
 class Address(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='addresses')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,
+                             related_name='addresses',blank=True,null=True,verbose_name=_("User")) # for Guest checkout
     full_name = models.CharField(max_length=255, verbose_name=_("Full Name"),help_text=_("Full Name"))
     phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
     alternate_phone = models.CharField(max_length=11,blank=True,help_text=_("Alternate Phone Number (optional)"),verbose_name=_("Alternate Phone Number (optional)"),)

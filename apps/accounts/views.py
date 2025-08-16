@@ -29,8 +29,23 @@ class ChangePasswordView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user
 
-# class WhishListView(generics.ListCreateAPIView):
-#     serializer_class = Wh
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+
+
+        user = self.get_object()
+        refresh = RefreshToken.for_user(user)
+
+        response.data = {
+            'user': RegisterSerializer(instance=user).data,
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+        return response
+
+
+class WhishListView(generics.ListCreateAPIView):
+    pass
 
 class AdressListView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
     pass
