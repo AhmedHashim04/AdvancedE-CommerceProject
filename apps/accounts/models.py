@@ -1,12 +1,16 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.utils import timezone
+import datetime
 from django.contrib.auth.models import AbstractUser
 import json
 # operation in account ap 
-['register','login','logout','change_password','reset_password',
- 'update_profile','update_address',"set_default_address","delete_address",
- "add_address","edit_address"]
+['reset_password',
+ 'addresses','update_address','set_default_address','delete_address',
+ 'add_address','edit_address',
+ 'wishlist','add_to_wishlist','remove_from_wishlist',
+]
 
 COUNTRY_CHOICES = [
         ('AF', 'Afghanistan'),
@@ -252,14 +256,17 @@ COUNTRY_CHOICES = [
     ]
 
 class CustomUser(AbstractUser):
+    email = models.EmailField(_("email address"))
     address = models.ForeignKey("Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     wishlist = models.ManyToManyField("store.Product",verbose_name=_("Wishlist"),blank=True)
 
     def __str__(self):
-        return self.username
+        return self.email
+
+
 
 class Address(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,
                              related_name='addresses',blank=True,null=True,verbose_name=_("User")) # for Guest checkout
     full_name = models.CharField(max_length=255, verbose_name=_("Full Name"),help_text=_("Full Name"))
     phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
@@ -284,6 +291,17 @@ class Address(models.Model):
         if self.is_default:
             Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
         super().save(*args, **kwargs)
+
+
+
+
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        return timezone.now() < self.created_at + datetime.timedelta(minutes=10)
 
 class UserActivityLog(models.Model):
 
@@ -328,7 +346,7 @@ class UserActivityLog(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        user_str = self.user.username if self.user else "Anonymous"
+        user_str = self.user.email if self.user else "Anonymous"
         return f"{user_str} - {self.action} @ {self.created_at}"
 
     def set_metadata(self, data: dict):

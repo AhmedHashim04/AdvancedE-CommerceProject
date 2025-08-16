@@ -10,7 +10,7 @@ urlpatterns = [
 
 # Add JWT  URLs / OAuth2 URLs
 
-from apps.accounts.views import RegisterView, ChangePasswordView
+from apps.accounts.views import RegisterView, ChangePasswordView, ForgetPasswordView, ResetPasswordConfirmView, ResetPasswordOTPConfirmView
 urlpatterns += [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -23,6 +23,13 @@ urlpatterns += [
     path("register/", RegisterView.as_view(), name="register"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
 
+    path("forget-password/", ForgetPasswordView.as_view(), name="forget-password"),
+
+    # لو المستخدم فتح اللينك اللي فيه JWT
+    path("reset-password/", ResetPasswordConfirmView.as_view(), name="reset-password"),
+
+    # لو المستخدم عايز يستخدم OTP بدل اللينك
+    path("reset-password-otp/", ResetPasswordOTPConfirmView.as_view(), name="reset-password-otp"),
 ]
 
 from apps.store.views import ProductListView, ProductDetailView

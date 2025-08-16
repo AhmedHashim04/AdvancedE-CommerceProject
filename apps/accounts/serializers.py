@@ -1,14 +1,31 @@
 from rest_framework import serializers
 from .models import CustomUser as User
 from django.contrib.auth.password_validation import validate_password
+class ForgetPasswordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email']
+    
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("User with this email does not exist")
+        return value
+    
 
 class RegisterSerializer(serializers.ModelSerializer):
     # password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['email', 'password','password_confirm']
+        extra_kwargs = {'password': {'write_only': True},
+                        'password_confirm': {'write_only': True}}
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({"password": "Passwords don't match."})
+        return attrs
 
     def create(self, validated_data):
         user = User(**validated_data)
@@ -40,3 +57,13 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         instance.set_password(validated_data['new_password'])
         instance.save()
         return instance
+
+class ForgetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            user = User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exist")
+        return value
