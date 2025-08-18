@@ -45,11 +45,10 @@ urlpatterns += [
     
 ]
 # Review add / remove as [user / guest ]
-
+from apps.reviews.views import ReviewCreateView, ReviewDestroyView
 urlpatterns += [
-    path("<slug:slug>/reviews/", ReviewListView.as_view(), name="product-list"),
-    path("<slug:slug>/add/", ReviewCreateView.as_view(), name="wishlist-add"),
-    path("<slug:slug>/remove/", ReviewDeleteView.as_view(), name="wishlist-remove"),
+    path("<slug:slug>/reviews/add/", ReviewCreateView.as_view(), name="review-add"),
+    path("<slug:slug>/reviews/remove/", ReviewDestroyView.as_view(), name="review-remove"),
 
 ]
 

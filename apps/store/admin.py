@@ -12,9 +12,10 @@ class ProductAdmin(admin.ModelAdmin):
 
     def thumbnail(self, obj):
         if obj.main_image:
-            return format_html(f'<img src="{obj.main_image.url}" width="50" height="50" style="object-fit: cover; border-radius: 5px;" />')
+            return format_html(f'<img src="mediafiles/{obj.main_image}" width="50" height="50" style="object-fit: cover; border-radius: 5px;" />')
+            return obj.main_image
         return "No Image"
-    thumbnail.short_description = "Image"
+    thumbnail.short_description = "Image" 
 
     def get_queryset(self, request):
         """تحديد المنتجات ذات المخزون المنخفض"""

@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from store.models import Product, Brand, Category, Tag, ProductImage, ProductColor, ShippingClass
+from apps.store.models import Product, Brand, Category, Tag, ProductImage, ProductColor, ShippingClass
 
 # from payment.models import Payment
 

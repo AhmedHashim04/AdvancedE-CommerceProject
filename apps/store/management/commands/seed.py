@@ -86,7 +86,7 @@ class Command(BaseCommand):
                 category=random.choice(categories),
                 price=round(random.uniform(100, 1000), 2),
                 compare_at_price=round(random.uniform(100, 1500), 2),
-                discount_percentage=random.choice([0, 5, 10, 15, 20, 25]),
+                # discount_percentage=random.choice([0, 5, 10, 15, 20, 25]),
                 cost_price=round(random.uniform(50, 500), 2),
                 tax_rate=random.choice([0, 5, 10, 15]),
                 stock_quantity=random.randint(0, 50),

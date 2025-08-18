@@ -18,11 +18,19 @@ class CursorPagination(CursorPagination):
     page_size_query_param = 'page_size' 
     ordering = '-created_at'
 
+class NoFormDjangoFilterBackend(DjangoFilterBackend):
+    template = None
+
+    def to_html(self, request, queryset, view):
+        return "" 
+    
+    
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductSerializer
     pagination_class = CursorPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [NoFormDjangoFilterBackend]
     filterset_class = ProductFilter
+
 
     def get_queryset(self):
         return Product.objects.select_related(
@@ -33,7 +41,7 @@ class ProductListView(generics.ListAPIView):
         ).only(
             'name', 'slug',  'short_description',
             'brand', 'category', 'tags',
-            'price', 'compare_at_price', 'discount_percentage', 'currency', 'tax_rate',
+            'price', 'compare_at_price',  'currency', 'tax_rate',
             'stock_quantity',
             'allow_backorder', 
             'main_image', 'gallery',
@@ -78,7 +86,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             .filter(is_active=True,is_in_stock=True)
             .only(
                 'id', 'name', 'slug', 'description', 'sku','barcode', 
-                'price', 'compare_at_price','discount_percentage', 'cost_price', 'currency', 'tax_rate',
+                'price', 'compare_at_price', 'cost_price', 'currency', 'tax_rate',
                 'category', 'brand',
                 'stock_quantity', 'is_in_stock',
                 'allow_backorder', 'main_image', 'video_url', 'view_360_url',
@@ -148,7 +156,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             category=product.category,is_active=True,is_in_stock=True,
             slug__in=viewed_slugs
         ).values('id','category__name', 'name', 'slug', 'main_image',
-        "price","discount_percentage","currency","tax_rate","compare_at_price"
+        "price","currency","tax_rate","compare_at_price"
         ).exclude(slug=product.slug)
 
     def update_recently_viewed(self, product):

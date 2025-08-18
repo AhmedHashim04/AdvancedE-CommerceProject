@@ -9,11 +9,6 @@ class ShippingClassSerializer(serializers.ModelSerializer):
         model = ShippingClass
         fields = ('name', 'description', 'price')
 
-class ColorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductColor
-        fields = ('name', 'hex_code')
-
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     brand_name = serializers.ReadOnlyField(source='brand.name')
@@ -21,15 +16,17 @@ class ProductSerializer(serializers.ModelSerializer):
     tags = serializers.SerializerMethodField()
     color_options = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ('name', 'slug', 'description', 'short_description', 'sku',
                 'barcode', 'brand_name', 'category_name', 'tags', 'price', 'compare_at_price',
-                'discount_percentage', 'cost_price', 'currency', 'tax_rate',
+                 'cost_price', 'currency', 'tax_rate',
                 'stock_quantity', 'low_stock_threshold', 'is_in_stock',
                 'allow_backorder', 'main_image', 'gallery', 'video_url',
                 'view_360_url', 'weight', 'width', 'height', 'depth',
+                'reviews',
                 'shipping_class', 'meta_title', 'meta_description', 'meta_keywords',
                 'has_variants', 'attributes', 'color_options', 'is_active', 'is_featured',
                 'created_at', 'updated_at', 'views_count', 'sales_count')
@@ -45,6 +42,10 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_gallery(self, obj):
         return [photo.image.url for photo in obj.gallery.all()]
+
+    def get_reviews(self, obj):
+        return [(review.user.email if review.user else review.ip, review.rating, review.feedback) for review in obj.reviews.all()]
+
 
     # # Slow
     # def to_representation(self, instance):

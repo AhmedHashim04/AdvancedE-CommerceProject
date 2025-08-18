@@ -2,6 +2,7 @@ import django_filters
 from .models import Product
 
 class ProductFilter(django_filters.FilterSet):
+    template = None  # يمنع محاولة تحميل أي template
     ordering = django_filters.OrderingFilter(
         fields=(
             ('price', 'price'),
