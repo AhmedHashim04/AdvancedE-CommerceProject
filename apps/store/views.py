@@ -31,6 +31,16 @@ class ProductListView(generics.ListAPIView):
     filter_backends = [NoFormDjangoFilterBackend]
     filterset_class = ProductFilter
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['fields'] = ['name', 'slug',  'short_description',
+            'brand', 'category', 'tags',
+            'price', 'compare_at_price',  'currency', 'tax_rate',
+            'stock_quantity',
+            'allow_backorder', 
+            'main_image', 'gallery',
+            'shipping_class', 'attributes', 'is_featured',]
+        return context
 
     def get_queryset(self):
         return Product.objects.select_related(
@@ -59,7 +69,6 @@ class ProductListView(generics.ListAPIView):
         # نحاول نجيب النتيجة من الكاش
         cached_response = cache.get(cache_key)
         if cached_response:
-            print(cached_response)
             return Response(cached_response)
 
         # لو مفيش كاش، ننفذ الطريقة العادية
@@ -74,6 +83,21 @@ class ProductDetailView(generics.RetrieveAPIView):
     lookup_field = 'slug'
     max_related_products = 4
     max_recently_viewed = 5
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['fields'] = [
+            'id', 'name', 'slug', 'description', 'sku','barcode', 
+            'price', 'compare_at_price', 'cost_price', 'currency', 'tax_rate',
+            'category', 'brand',
+            'stock_quantity', 'is_in_stock',
+            'allow_backorder', 'main_image', 'video_url', 'view_360_url',
+            'weight', 'width', 'height', 'depth',
+            'shipping_class_id',
+            'meta_title', 'meta_description', 'meta_keywords',
+            'has_variants', 'attributes', 'is_featured',
+            'views_count', 'sales_count']
+        return context
 
     def get_queryset(self):
         return (

@@ -3,13 +3,28 @@ from .models import Product, ShippingClass, ProductColor
 from django.core.cache import cache
 import hashlib
 
+class DynamicFieldsProductSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        fields = None
+        if "request" in self.context and "fields" in self.context:
+            fields = self.context["fields"]
+
+        if fields is not None:
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
 
 class ShippingClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingClass
         fields = ('name', 'description', 'price')
 
-class ProductSerializer(serializers.ModelSerializer):
+
+class ProductSerializer(DynamicFieldsProductSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     brand_name = serializers.ReadOnlyField(source='brand.name')
     shipping_class = ShippingClassSerializer()
@@ -20,18 +35,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('name', 'slug', 'description', 'short_description', 'sku',
-                'barcode', 'brand_name', 'category_name', 'tags', 'price', 'compare_at_price',
-                 'cost_price', 'currency', 'tax_rate',
-                'stock_quantity', 'low_stock_threshold', 'is_in_stock',
-                'allow_backorder', 'main_image', 'gallery', 'video_url',
-                'view_360_url', 'weight', 'width', 'height', 'depth',
-                'reviews',
-                'shipping_class', 'meta_title', 'meta_description', 'meta_keywords',
-                'has_variants', 'attributes', 'color_options', 'is_active', 'is_featured',
-                'created_at', 'updated_at', 'views_count', 'sales_count')
-        # depth = 1
-
+        fields = "__all__"
+        
 
 
     def get_tags(self, obj):

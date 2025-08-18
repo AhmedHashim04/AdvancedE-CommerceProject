@@ -44,7 +44,6 @@ urlpatterns += [
     path("wishlist/remove/", WishlistRemoveView.as_view(), name="wishlist-remove"),
     
 ]
-# Review add / remove as [user / guest ]
 from apps.reviews.views import ReviewCreateView, ReviewDestroyView
 urlpatterns += [
     path("<slug:slug>/reviews/add/", ReviewCreateView.as_view(), name="review-add"),
@@ -53,7 +52,9 @@ urlpatterns += [
 ]
 
 # aplly coupon / discounts and promotions in discount cart and checkout and order as [user / guest ]
+
 # create order , order now , order lists , order details and order cancel as [user / guest ]
+
 # make Home page
 # make Notification system
 # make Payment system
