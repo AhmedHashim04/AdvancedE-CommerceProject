@@ -163,14 +163,12 @@ class ProductDetailView(generics.RetrieveAPIView):
         self.request.session[session_key] = viewed_slugs
         self.request.session.modified = True
 
-
 class WishlistListView(generics.ListAPIView):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return self.request.user.wishlist.all()
-
 
 class WishlistAddView(APIView):
     permission_classes = [IsAuthenticated]
@@ -179,7 +177,6 @@ class WishlistAddView(APIView):
         product = get_object_or_404(Product, id=request.data.get("product_id"))
         request.user.wishlist.add(product)
         return Response({"status": "added"})
-
 
 class WishlistRemoveView(APIView):
     permission_classes = [IsAuthenticated]

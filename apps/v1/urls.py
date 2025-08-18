@@ -33,6 +33,7 @@ urlpatterns += [
 ]
 
 from apps.store.views import ProductListView, ProductDetailView, WishlistListView, WishlistAddView, WishlistRemoveView
+
 urlpatterns += [
 
     path("products/", ProductListView.as_view(), name="product-list"),
@@ -43,7 +44,22 @@ urlpatterns += [
     path("wishlist/remove/", WishlistRemoveView.as_view(), name="wishlist-remove"),
     
 ]
+# Review add / remove as [user / guest ]
 
 urlpatterns += [
+    path("<slug:slug>/reviews/", ReviewListView.as_view(), name="product-list"),
+    path("<slug:slug>/add/", ReviewCreateView.as_view(), name="wishlist-add"),
+    path("<slug:slug>/remove/", ReviewDeleteView.as_view(), name="wishlist-remove"),
 
 ]
+
+# aplly coupon / discounts and promotions in discount cart and checkout and order as [user / guest ]
+# create order , order now , order lists , order details and order cancel as [user / guest ]
+# make Home page
+# make Notification system
+# make Payment system
+# make contact us page
+# make newsletter system
+# make about us page
+# make terms and conditions page
+# make privacy policy page
