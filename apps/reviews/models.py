@@ -22,7 +22,7 @@ class Review(models.Model):
         blank=True,
         null=True  # for Guest user
     )
-    ip = models.GenericIPAddressField(
+    ip_address = models.GenericIPAddressField(
         verbose_name=_("IP Address"), blank=True, null=True
     )
     feedback = models.CharField(
@@ -53,12 +53,12 @@ class Review(models.Model):
             ),
             # يمنع يكرر الريفيو لو ضيف (IP)
             UniqueConstraint(
-                fields=["product", "ip"],
-                condition=Q(user__isnull=True, ip__isnull=False),
+                fields=["product", "ip_address"],
+                condition=Q(user__isnull=True, ip_address__isnull=False),
                 name="unique_product_review_ip"
             ),
         ]
 
     def __str__(self):
-        identifier = self.user.email if self.user else self.ip
+        identifier = self.user.email if self.user else self.ip_address
         return f"{identifier} - {self.product.name} ({self.rating}/5)"

@@ -44,16 +44,29 @@ urlpatterns += [
     path("wishlist/remove/", WishlistRemoveView.as_view(), name="wishlist-remove"),
     
 ]
+
 from apps.reviews.views import ReviewCreateView, ReviewDestroyView
 urlpatterns += [
     path("<slug:slug>/reviews/add/", ReviewCreateView.as_view(), name="review-add"),
     path("<slug:slug>/reviews/remove/", ReviewDestroyView.as_view(), name="review-remove"),
 
 ]
+# from apps.cart.views import CartListView, CartAddView, CartUpdateView, CartRemoveView, CartClearView
+# urlpatterns += [
 
-# aplly coupon / discounts and promotions in discount cart and checkout and order as [user / guest ]
+#     path("cart/", CartListView.as_view(), name="cart-list"),
+#     path("cart/add/", CartAddView.as_view(), name="cart-add"),
+#     path("cart/update/", CartUpdateView.as_view(), name="cart-update"),
+#     path("cart/remove/", CartRemoveView.as_view(), name="cart-remove"),
+#     path("cart/clear/", CartClearView.as_view(), name="cart-clear"),
+# ]
 
-# create order , order now , order lists , order details and order cancel as [user / guest ]
+#  Cart Price --> price - (product  promotion or category promotion) + coupon applyied
+#  checkout  / total price --> Cart Price -order promotion + shipping cost
+
+# apply promotions and coupon in cart and checkout and order as [Guest , User]
+
+# create order , order now , order lists , order details and order cancel as [Guest , User]
 
 # make Home page
 # make Notification system

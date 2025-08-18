@@ -8,7 +8,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("brand", "category", "is_active", "is_featured")
     search_fields = ("name", "sku", "barcode")
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("views_count", "sales_count")
+    readonly_fields = ("views_count", "sales_count","price")
 
     def thumbnail(self, obj):
         if obj.main_image:

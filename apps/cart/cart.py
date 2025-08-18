@@ -113,34 +113,6 @@ class Cart:
         else:
             cache.set(cache_key, self.cart, timeout=3600)
 
-    def get_total_price(self) -> Decimal:
-        return sum(
-            Decimal(item["price"]) * item["quantity"] for item in self.cart.values()
-        )
-
-    def get_total_discount(self) -> Decimal:
-        return sum(
-            (Decimal(item["price"]) * item["quantity"])
-            * (Decimal(item["discount"]) / 100)
-            for item in self.cart.values()
-        )
-
-    def get_total_price_after_discount(self) -> Decimal:
-        return self.get_total_price() - self.get_total_discount()
-
-    def get_addition_cost(self) -> Decimal:
-        return Addition_Shipping_Cost * (len(self)-3) if (len(self)) > 3 else 0
-    
-    def get_cart_summary(self):
-        total_price_after_discount = self.get_total_price_after_discount() + self.get_addition_cost()
-
-        return {
-            "total_items": len(self),
-            "total_price": self.get_total_price(),
-            "total_discount": self.get_total_discount(),
-            "addition_cost": self.get_addition_cost(),
-            "total_price_after_discount": total_price_after_discount,
-        }
 
     @staticmethod
     def merge_on_login(user, old_session_key) -> int:
@@ -174,3 +146,35 @@ class Cart:
         cache.delete(session_cart_key)
 
         return added_count
+
+
+
+
+    # def get_total_price(self) -> Decimal:
+    #     return sum(
+    #         Decimal(item["price"]) * item["quantity"] for item in self.cart.values()
+    #     )
+
+    # def get_total_discount(self) -> Decimal:
+    #     return sum(
+    #         (Decimal(item["price"]) * item["quantity"])
+    #         * (Decimal(item["discount"]) / 100)
+    #         for item in self.cart.values()
+    #     )
+
+    # def get_total_price_after_discount(self) -> Decimal:
+    #     return self.get_total_price() - self.get_total_discount()
+
+    # def get_addition_cost(self) -> Decimal:
+    #     return Addition_Shipping_Cost * (len(self)-3) if (len(self)) > 3 else 0
+    
+    # def get_cart_summary(self):
+    #     total_price_after_discount = self.get_total_price_after_discount() + self.get_addition_cost()
+
+    #     return {
+    #         "total_items": len(self),
+    #         "total_price": self.get_total_price(),
+    #         "total_discount": self.get_total_discount(),
+    #         "addition_cost": self.get_addition_cost(),
+    #         "total_price_after_discount": total_price_after_discount,
+    #     }

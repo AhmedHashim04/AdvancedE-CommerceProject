@@ -49,7 +49,7 @@ class ProductSerializer(DynamicFieldsProductSerializer):
         return [photo.image.url for photo in obj.gallery.all()]
 
     def get_reviews(self, obj):
-        return [(review.user.email if review.user else review.ip, review.rating, review.feedback) for review in obj.reviews.all()]
+        return [(review.user.email if review.user else review.ip_address, review.rating, review.feedback) for review in obj.reviews.all()]
 
 
     # # Slow

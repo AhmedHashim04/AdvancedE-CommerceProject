@@ -5,6 +5,7 @@ from .models import Review
 from .serializers import ReviewSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from core.utils import get_client_ip
 
 class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewSerializer
@@ -17,8 +18,7 @@ class ReviewCreateView(generics.CreateAPIView):
             if Review.objects.filter(user=self.request.user, product=product).exists():
                 return Response({"You have already reviewed this product"})
         else:
-            if Review.objects.filter(ip=self.get_client_ip(self.request), product=product).exists():
-                print("aa")
+            if Review.objects.filter(ip_address = get_client_ip(self.request), product=product).exists():
                 return Response("You have already reviewed this product")
 
         return super().post(request, *args, **kwargs)
@@ -32,19 +32,9 @@ class ReviewCreateView(generics.CreateAPIView):
                 return Response({"You have already reviewed this product"})
             serializer.save(user=self.request.user, product=product)
         else:
-            if Review.objects.filter(ip=self.get_client_ip(self.request), product=product).exists():
-                print("aa")
+            if Review.objects.filter(ip_address = get_client_ip(self.request), product=product).exists():
                 return Response("You have already reviewed this product")
-            ip = self.get_client_ip(self.request)
-            serializer.save(ip=ip, product=product)
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
+            serializer.save(ip_address = get_client_ip(self.request), product=product)
     
 class ReviewDestroyView(APIView):
     def get(self, request, *args, **kwargs):
@@ -56,9 +46,8 @@ class ReviewDestroyView(APIView):
             else:
                 return Response({"status": "you have not reviewed this product"})
         else:
-            ip = self.get_client_ip(self.request)
-            if Review.objects.filter(ip=ip, product=product).exists():
-                Review.objects.filter(ip=ip, product=product).delete()
+            if Review.objects.filter(ip_address = get_client_ip(self.request), product=product).exists():
+                Review.objects.filter(ip_address = get_client_ip(self.request), product=product).delete()
             else:
                 return Response({"status": "you have not reviewed this product"})
 

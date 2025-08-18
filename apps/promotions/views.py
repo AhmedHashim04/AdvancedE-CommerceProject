@@ -1,3 +1,2 @@
 from django.shortcuts import render
-
-# Create your views here.
+# When you add product to cart it will be added with itis promotion price and 

@@ -96,7 +96,7 @@ class Product(models.Model):
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
 
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     currency = models.CharField(max_length=3, default="EGP")
@@ -117,6 +117,7 @@ class Product(models.Model):
     height = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     shipping_class = models.ForeignKey('ShippingClass', on_delete=models.SET_NULL, null=True, blank=True)
+    free_shipping = models.BooleanField(default=False)
 
     meta_title = models.CharField(max_length=255, blank=True)
     meta_description = models.TextField(blank=True)
@@ -140,38 +141,33 @@ class Product(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         self.is_in_stock = self.stock_quantity > 0
+
         super().save(*args, **kwargs)
 
-    def get_discounted_price(self, quantity=1):
-        base_price = Decimal(self.price)
+    # def get_discounted_price(self, quantity=1):
+    #     base_price = Decimal(self.price)
 
-        # Flash Sale
-        if self.flash_sale and self.flash_sale.is_ongoing():
-            return (base_price * (Decimal(1) - Decimal(self.flash_sale.discount_percentage) / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    #     # Flash Sale
+    #     if self.flash_sale and self.flash_sale.is_ongoing():
+    #         return (base_price * (Decimal(1) - Decimal(self.flash_sale.discount_percentage) / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        # Tiered & Promotions
-        now = timezone.now()
-        promotions = Promotion.objects.filter(
-            Q(products=self) | Q(categories=self.category) | Q(apply_to='all'),
-            start_date__lte=now,
-            end_date__gte=now,
-            is_active=True
-        ).exclude(excluded_products=self)
+    #     # Tiered & Promotions
+    #     now = timezone.now()
+    #     promotions = Promotion.objects.filter(
+    #         Q(products=self) | Q(categories=self.category) | Q(apply_to='all'),
+    #         start_date__lte=now,
+    #         end_date__gte=now,
+    #         is_active=True
+    #     ).exclude(excluded_products=self)
 
-        for promo in promotions:
-            if promo.discount_type == 'percentage' and promo.value:
-                return (base_price * (Decimal(1) - promo.value / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            elif promo.discount_type == 'fixed' and promo.value:
-                return max(base_price - promo.value, Decimal("0.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    #     for promo in promotions:
+    #         if promo.discount_type == 'percentage' and promo.value:
+    #             return (base_price * (Decimal(1) - promo.value / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    #         elif promo.discount_type == 'fixed' and promo.value:
+    #             return max(base_price - promo.value, Decimal("0.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        return base_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    #     return base_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        self.is_in_stock = self.stock_quantity > 0
-        super().save(*args, **kwargs)
 
     def get_seo_title(self):
         """إرجاع عنوان مناسب للـ SEO"""
