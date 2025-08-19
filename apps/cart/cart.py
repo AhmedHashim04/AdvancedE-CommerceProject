@@ -42,7 +42,7 @@ class Cart:
         slug = str(product.slug)
         price = Decimal(product.compare_at_price)
         discount = Decimal(product.compare_at_price - product.price)
-        final_price = Decimal(product.price)
+        final_price = Decimal(product.price) if product.price > 0 else Decimal(product.compare_at_price)
 
         item = self.cart.get(slug)
 
@@ -115,7 +115,6 @@ class Cart:
         else:
             cache.set(cache_key, self.cart, timeout=3600)
 
-
     @staticmethod
     def merge_on_login(user, old_session_key) -> int:
         session_cart_key = f"cart_session_{old_session_key}"
@@ -149,9 +148,6 @@ class Cart:
 
         return added_count
 
-
-
-
     def get_total_price(self):
         return sum(
             Decimal(item["price"]) for item in self.cart.values()
@@ -167,7 +163,7 @@ class Cart:
 
     # def get_addition_cost(self):
     #     return Addition_Shipping_Cost * (len(self)-3) if (len(self)) > 3 else 0
-    
+
     def get_cart_summary(self):
         total_price_after_discount = self.get_total_price_after_discount()# + self.get_addition_cost()
 

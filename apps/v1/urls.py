@@ -51,17 +51,17 @@ urlpatterns += [
     path("<slug:slug>/reviews/remove/", ReviewDestroyView.as_view(), name="review-remove"),
 
 ]
-# from apps.cart.views import CartListView, CartAddView, CartUpdateView, CartRemoveView, CartClearView
-# urlpatterns += [
+from apps.cart.views import CartListView, cart_add, cart_update, cart_remove, cart_clear
+urlpatterns += [
 
-#     path("cart/", CartListView.as_view(), name="cart-list"),
-#     path("cart/add/", CartAddView.as_view(), name="cart-add"),
-#     path("cart/update/", CartUpdateView.as_view(), name="cart-update"),
-#     path("cart/remove/", CartRemoveView.as_view(), name="cart-remove"),
-#     path("cart/clear/", CartClearView.as_view(), name="cart-clear"),
-# ]
+    path("cart/", CartListView.as_view(), name="cart-list"),
+    path("cart/<slug:slug>/add/", cart_add.as_view(), name="cart-add"),
+    path("cart/<slug:slug>/update/", cart_update.as_view(), name="cart-update"),
+    path("cart/<slug:slug>/remove/", cart_remove.as_view(), name="cart-remove"),
+    path("cart/<slug:slug>/clear/", cart_clear.as_view(), name="cart-clear"),
+]
 
-#  Cart Price --> price - (product  promotion or category promotion) + coupon applyied
+#  Cart Price -->  coupon applyied
 #  checkout  / total price --> Cart Price -order promotion + shipping cost
 
 # apply promotions and coupon in cart and checkout and order as [Guest , User]

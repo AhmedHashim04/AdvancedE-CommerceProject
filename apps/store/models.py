@@ -96,7 +96,7 @@ class Product(models.Model):
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
 
-    price = models.DecimalField(default=0, max_digits=10, decimal_places=2)
+    price = models.DecimalField(default=0, max_digits=10, decimal_places=2,editable=False)
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     currency = models.CharField(max_length=3, default="EGP")
