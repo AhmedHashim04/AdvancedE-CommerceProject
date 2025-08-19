@@ -40,24 +40,25 @@ class Cart:
             return
 
         slug = str(product.slug)
-        price = Decimal(product.price)
-        discount = Decimal(product.discount_percentage)
-        final_price = Decimal(product.compare_at_price)
+        price = Decimal(product.compare_at_price)
+        discount = Decimal(product.compare_at_price - product.price)
+        final_price = Decimal(product.price)
 
         item = self.cart.get(slug)
 
         if not item:
             item = {
-                "quantity": 0,
-                "price": str(price),
-                "discount": str(discount),
-                "price_after_discount": str(final_price),
-                "added_at": now().isoformat(),
-                "total_price": "0",
+                "quantity" : 0,
+                "price" : str(price),
+                "tax_rate" : str(product.tax_rate),
+                "discount" : str(discount),
+                "price_after_discount" : str(final_price),
+                "added_at" : now().isoformat(),
+                "subtotal" : "0",
             }
 
         item["quantity"] = quantity
-        item["total_price"] = str(final_price * quantity)
+        item["subtotal"] = str(final_price * quantity)
 
         self.cart[slug] = item
         self.save()
@@ -84,16 +85,17 @@ class Cart:
             if not product:
                 continue
 
-            discount_amount = Decimal(item["price"]) * Decimal(item["discount"]) / 100
+            discount_amount = Decimal(item["compare_at_price"]) - Decimal(item["discount"]) 
 
             yield {
-                "product": product,
-                "quantity": item["quantity"],
-                "price": Decimal(item["price"]),
-                "discount": discount_amount,
-                "price_after_discount": Decimal(item["price_after_discount"]),
-                "added_at": item.get("added_at"),
-                "total_price": Decimal(item["total_price"]),
+                "product" : product,
+                "tax_rate" : product.tax_rate,
+                "quantity" : item["quantity"],
+                "price" : Decimal(item["compare_at_price"]),
+                "discount" : discount_amount,
+                "price_after_discount" : Decimal(item["price"]),
+                "added_at" : item.get("added_at"),
+                "subtotal" : Decimal(item["subtotal"]),
             }
 
     def __len__(self):
@@ -150,31 +152,29 @@ class Cart:
 
 
 
-    # def get_total_price(self) -> Decimal:
-    #     return sum(
-    #         Decimal(item["price"]) * item["quantity"] for item in self.cart.values()
-    #     )
+    def get_total_price(self):
+        return sum(
+            Decimal(item["price"]) for item in self.cart.values()
+        )
 
-    # def get_total_discount(self) -> Decimal:
-    #     return sum(
-    #         (Decimal(item["price"]) * item["quantity"])
-    #         * (Decimal(item["discount"]) / 100)
-    #         for item in self.cart.values()
-    #     )
+    def get_total_discount(self):
+        return sum(
+            Decimal(item["discount"]) for item in self.cart.values()
+        )
 
-    # def get_total_price_after_discount(self) -> Decimal:
-    #     return self.get_total_price() - self.get_total_discount()
+    def get_total_price_after_discount(self):
+        return self.get_total_price() - self.get_total_discount()
 
-    # def get_addition_cost(self) -> Decimal:
+    # def get_addition_cost(self):
     #     return Addition_Shipping_Cost * (len(self)-3) if (len(self)) > 3 else 0
     
-    # def get_cart_summary(self):
-    #     total_price_after_discount = self.get_total_price_after_discount() + self.get_addition_cost()
+    def get_cart_summary(self):
+        total_price_after_discount = self.get_total_price_after_discount()# + self.get_addition_cost()
 
-    #     return {
-    #         "total_items": len(self),
-    #         "total_price": self.get_total_price(),
-    #         "total_discount": self.get_total_discount(),
-    #         "addition_cost": self.get_addition_cost(),
-    #         "total_price_after_discount": total_price_after_discount,
-    #     }
+        return {
+            "total_items": len(self),
+            "total_price": self.get_total_price(),
+            "total_discount": self.get_total_discount(),
+            # "addition_cost": self.get_addition_cost(),
+            "total_price_after_discount": total_price_after_discount,
+        }

@@ -100,7 +100,7 @@ class Product(models.Model):
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     currency = models.CharField(max_length=3, default="EGP")
-    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    tax_rate = models.DecimalField(default=0, max_digits=5, decimal_places=2, blank=True, null=True)
 
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
