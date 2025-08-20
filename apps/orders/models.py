@@ -21,22 +21,47 @@ class OrderStatus(models.TextChoices):
 
 class PaymentMethod(models.TextChoices):
     COD = "cod", _("Cash on Delivery")
-
-class ShippingMethod(models.TextChoices):
+    CREDIT_CARD = "credit_card", _("Credit Card")
+    DEBIT_CARD = "debit_card", _("Debit Card")
+    PAYPAL = "paypal", _("PayPal")
+    APPLE_PAY = "apple_pay", _("Apple Pay")
+    GOOGLE_PAY = "google_pay", _("Google Pay")
+    BANK_TRANSFER = "bank_transfer", _("Bank Transfer")
+    STRIPE = "stripe", _("Stripe")
+    AMAZON_PAY = "amazon_pay", _("Amazon Pay")
+    KLARNA = "klarna", _("Klarna")
+    AFTERPAY = "afterpay", _("Afterpay")
+    BITCOIN = "bitcoin", _("Bitcoin")
+    OTHER_CRYPTO = "other_crypto", _("Other Cryptocurrency")
+    ALIPAY = "alipay", _("Alipay")
+    WECHAT_PAY = "wechat_pay", _("WeChat Pay")
+    VENMO = "venmo", _("Venmo")
+    SQUARE = "square", _("Square")
+    PAYONEER = "payoneer", _("Payoneer")
+    SHOP_PAY = "shop_pay", _("Shop Pay")
+    IDEAL = "ideal", _("iDEAL")
+    SOFORT = "sofort", _("Sofort")
+    GIROPAY = "giropay", _("Giropay")
+    BOLETO = "boleto", _("Boleto")
+    PIX = "pix", _("Pix")
+    
+class ShippingClass(models.TextChoices):
     STANDARD = "standard", _("Standard Shipping")
-    # PICKUP = "pickup", _("In-store Pickup")
-    # EXPRESS = "express", _("Express Shipping")
+    PICKUP = "pickup", _("In-store Pickup")
+    EXPRESS = "express", _("Express Shipping")
 
 class Order(models.Model):
 
     id = models.UUIDField(_("ID"), primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="orders", verbose_name=_("User"))
+    ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
+
     address = models.ForeignKey("accounts.Address", on_delete=models.PROTECT, related_name="orders", verbose_name=_("Address"))
     full_name = models.CharField(max_length=100, verbose_name=_("Full Name"))
     notes = models.TextField(blank=True, null=True, verbose_name=_("Additional Notes"))
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, verbose_name=_("Status"))
     payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.COD, verbose_name=_("Payment Method"))
-    shipping_method = models.CharField(max_length=20, choices=ShippingMethod.choices, default=ShippingMethod.STANDARD, verbose_name=_("Shipping Method"))
+    shipping_method = models.CharField(max_length=20, choices=ShippingClass.choices, default=ShippingClass.STANDARD, verbose_name=_("Shipping Method"))
 
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Shipping Cost"))
     weight_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Delivery Fee"))
@@ -66,18 +91,12 @@ class Order(models.Model):
             self.status_changed_at = timezone.now()
             self.save()
 
-    def calculate_shipping_cost(self):
-        if self.shipping_option:
-            return self.shipping_option.price
-        return Decimal("0.00")
+    # def calculate_weight_cost(self):
+    #     total_quantity = sum(item.quantity for item in self.get_items())-3
 
-
-    def calculate_weight_cost(self):
-        total_quantity = sum(item.quantity for item in self.get_items())-3
-
-        if total_quantity > 0:
-            return Decimal(total_quantity) * 10
-        return Decimal("0.00")
+    #     if total_quantity > 0:
+    #         return Decimal(total_quantity) * 10
+    #     return Decimal("0.00")
 
 
     def clean(self):
@@ -85,10 +104,9 @@ class Order(models.Model):
             raise ValidationError(_("Prices must be non-negative."))
 
     def save(self, *args, **kwargs):
-        if self.shipping_cost == 0 :
-            self.shipping_cost = self.calculate_shipping_cost()
         if self.weight_cost == 0 :
-            self.weight_cost = self.calculate_weight_cost()
+            pass
+            # self.weight_cost = self.calculate_weight_cost()
         super().save(*args, **kwargs)
 
 class OrderItem(models.Model):

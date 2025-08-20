@@ -39,12 +39,12 @@ class ProductListView(generics.ListAPIView):
             'stock_quantity',
             'allow_backorder', 
             'main_image', 'gallery',
-            'shipping_class', 'attributes', 'is_featured',]
+            'attributes', 'is_featured',]
         return context
 
     def get_queryset(self):
         return Product.objects.select_related(
-            'category', 'brand', 'shipping_class'
+            'category', 'brand',
         ).prefetch_related(
             'tags', 'color_options', 'gallery'
         ).filter(is_active=True,is_in_stock=True
@@ -55,7 +55,7 @@ class ProductListView(generics.ListAPIView):
             'stock_quantity',
             'allow_backorder', 
             'main_image', 'gallery',
-            'shipping_class', 'attributes', 'is_featured',
+            'attributes', 'is_featured',
 
         )
 
@@ -93,7 +93,6 @@ class ProductDetailView(generics.RetrieveAPIView):
             'stock_quantity', 'is_in_stock',
             'allow_backorder', 'main_image', 'video_url', 'view_360_url',
             'weight', 'width', 'height', 'depth',
-            'shipping_class_id',
             'meta_title', 'meta_description', 'meta_keywords',
             'has_variants', 'attributes', 'is_featured',
             'views_count', 'sales_count']
@@ -102,7 +101,7 @@ class ProductDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return (
             Product.objects.select_related(
-                'category', 'brand', 'shipping_class'
+                'category', 'brand',
             )
             .prefetch_related(
                 'tags', 'color_options', 'gallery'
@@ -115,7 +114,6 @@ class ProductDetailView(generics.RetrieveAPIView):
                 'stock_quantity', 'is_in_stock',
                 'allow_backorder', 'main_image', 'video_url', 'view_360_url',
                 'weight', 'width', 'height', 'depth',
-                'shipping_class_id',
                 'meta_title', 'meta_description', 'meta_keywords',
                 'has_variants', 'attributes', 'is_featured',
                 'views_count', 'sales_count'
@@ -202,8 +200,10 @@ class WishlistListView(generics.ListAPIView):
     def get_queryset(self):
         return self.request.user.wishlist.all()
 
+from core.utils import EmptySerializer
 class WishlistAddView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = EmptySerializer
 
     def post(self, request):
         product = get_object_or_404(Product, id=request.data.get("product_id"))
@@ -212,6 +212,7 @@ class WishlistAddView(APIView):
 
 class WishlistRemoveView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = EmptySerializer
 
     def post(self, request):
         product = get_object_or_404(Product, id=request.data.get("product_id"))

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ShippingClass, ProductColor
+from .models import Product, ProductColor
 from django.core.cache import cache
 import hashlib
 
@@ -10,6 +10,10 @@ class DynamicFieldsProductSerializer(serializers.ModelSerializer):
         fields = None
         if "request" in self.context and "fields" in self.context:
             fields = self.context["fields"]
+            fields.remove("brand")
+            fields.append("brand_name")
+            fields.remove("category")
+            fields.append("category_name")
 
         if fields is not None:
             allowed = set(fields)
@@ -18,16 +22,16 @@ class DynamicFieldsProductSerializer(serializers.ModelSerializer):
                 self.fields.pop(field_name)
 
 
-class ShippingClassSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ShippingClass
-        fields = ('name', 'description', 'price')
+# class ShippingClassSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ShippingClass
+#         fields = ('name', 'description', 'price')
 
 
 class ProductSerializer(DynamicFieldsProductSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     brand_name = serializers.ReadOnlyField(source='brand.name')
-    shipping_class = ShippingClassSerializer()
+    # shipping_class = ShippingClassSerializer()
     tags = serializers.SerializerMethodField()
     color_options = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
@@ -36,8 +40,6 @@ class ProductSerializer(DynamicFieldsProductSerializer):
     class Meta:
         model = Product
         fields = "__all__"
-        
-
 
     def get_tags(self, obj):
         return [tag.name for tag in obj.tags.all()]

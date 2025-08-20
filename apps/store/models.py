@@ -72,14 +72,6 @@ class ProductImage(models.Model):
         return self.alt_text or self.image.url
 
 
-class ShippingClass(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-    def __str__(self):
-        return self.name
-
 # -------------------------------------
 # Main Product Model
 # -------------------------------------
@@ -116,7 +108,6 @@ class Product(models.Model):
     width = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     height = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    shipping_class = models.ForeignKey('ShippingClass', on_delete=models.SET_NULL, null=True, blank=True)
     free_shipping = models.BooleanField(default=False)
 
     meta_title = models.CharField(max_length=255, blank=True)

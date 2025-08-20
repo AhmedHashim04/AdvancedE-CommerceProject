@@ -55,10 +55,10 @@ from apps.cart.views import CartListView, cart_add, cart_update, cart_remove, ca
 urlpatterns += [
 
     path("cart/", CartListView.as_view(), name="cart-list"),
-    path("cart/<slug:slug>/add/", cart_add.as_view(), name="cart-add"),
-    path("cart/<slug:slug>/update/", cart_update.as_view(), name="cart-update"),
-    path("cart/<slug:slug>/remove/", cart_remove.as_view(), name="cart-remove"),
-    path("cart/<slug:slug>/clear/", cart_clear.as_view(), name="cart-clear"),
+    path("cart/<slug:slug>/add/", cart_add, name="cart-add"),
+    path("cart/<slug:slug>/update/", cart_update, name="cart-update"),
+    path("cart/<slug:slug>/remove/", cart_remove, name="cart-remove"),
+    path("cart/<slug:slug>/clear/", cart_clear, name="cart-clear"),
 ]
 
 #  Cart Price -->  coupon applyied
@@ -76,3 +76,4 @@ urlpatterns += [
 # make about us page
 # make terms and conditions page
 # make privacy policy page
+

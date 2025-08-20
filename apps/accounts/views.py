@@ -94,8 +94,9 @@ class ForgetPasswordView(generics.CreateAPIView):
             {"detail": "We have sent a password reset link and OTP code to your email."},
             status=status.HTTP_200_OK,
         )
-
+from core.utils import EmptySerializer
 class ResetPasswordConfirmView(generics.CreateAPIView):
+    serializer_class = EmptySerializer
     """
     The user opens the link in the JWT and enters a new password
     """
@@ -117,8 +118,8 @@ class ResetPasswordConfirmView(generics.CreateAPIView):
             return Response({"detail": "Password has been changed successfully "})
         except User.DoesNotExist:
             return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
 class ResetPasswordOTPConfirmView(generics.CreateAPIView):
+    serializer_class = EmptySerializer
     """
     The user enters the OTP code and a new password
     """
@@ -142,6 +143,6 @@ class ResetPasswordOTPConfirmView(generics.CreateAPIView):
             return Response({"detail": "Password has been changed using OTP "})
         except User.DoesNotExist:
             return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
 class AdressListView(generics.ListCreateAPIView, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = EmptySerializer
     pass

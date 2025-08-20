@@ -16,11 +16,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     # password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True, required=True)
 
+        
     class Meta:
+        ref_name = "CustomRegisterSerializer"
         model = User
         fields = ['email', 'password','password_confirm']
         extra_kwargs = {'password': {'write_only': True},
                         'password_confirm': {'write_only': True}}
+
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:

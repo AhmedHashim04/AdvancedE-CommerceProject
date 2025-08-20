@@ -3,8 +3,10 @@ from django.views.decorators.http import require_POST
 from rest_framework import generics
 from rest_framework import permissions
 from apps.store.models import Product
-from .cart import Cart as ShoppingCart
+from apps.cart.cart import Cart as ShoppingCart
 from django.utils.translation import gettext as _
+from core.utils import EmptySerializer
+
 # from django_ratelimit.decorators import ratelimit
 
 
@@ -38,8 +40,11 @@ def cart_clear(request):
     cart = ShoppingCart(request)
     cart.clear()
 
+
+
 class CartListView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = EmptySerializer
 
     def get_cart(self):
         return ShoppingCart(self.request)

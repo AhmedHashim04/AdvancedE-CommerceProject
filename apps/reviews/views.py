@@ -6,6 +6,8 @@ from .serializers import ReviewSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from core.utils import get_client_ip
+from core.utils import EmptySerializer
+
 
 class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewSerializer
@@ -37,6 +39,8 @@ class ReviewCreateView(generics.CreateAPIView):
             serializer.save(ip_address = get_client_ip(self.request), product=product)
     
 class ReviewDestroyView(APIView):
+    serializer_class = EmptySerializer
+
     def get(self, request, *args, **kwargs):
         slug = self.kwargs.get("slug")
         product = get_object_or_404(Product, slug=slug)

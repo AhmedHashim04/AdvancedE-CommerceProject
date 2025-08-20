@@ -2,7 +2,8 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.timezone import now
-from store.models import Product
+from apps.store.models import Product
+
 Addition_Shipping_Cost = 10
 
 class Cart:
