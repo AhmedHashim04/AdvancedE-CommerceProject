@@ -149,9 +149,6 @@ class PromotionUsage(models.Model):
     def __str__(self):
         return f"{self.promotion.name} used on Order {self.order.id}"
 
-
-
-
 class LoyaltyProgram(models.Model):
     name = models.CharField(max_length=255)
     points_per_purchase = models.PositiveIntegerField(default=1)
@@ -171,3 +168,12 @@ class LoyaltyPoints(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.points} points"
+
+
+# User -- > cart apply coupon --> coupon verification in
+#           total_price(fixed/percent) 
+#           make order free shipping 
+#           coupon check if specific product in cart quantity of product will be add +=1 or add specific other product
+#           coupon check if 10 uses to this make code is dis active 
+#           coupon check if total price is x dollar andit will apllied
+#           

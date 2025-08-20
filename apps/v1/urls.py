@@ -63,10 +63,13 @@ urlpatterns += [
 
 #  Cart Price -->  coupon applyied
 #  checkout  / total price --> Cart Price -order promotion + shipping cost
-
+# make address create/destroy/edit 
 # apply promotions and coupon in cart and checkout and order as [Guest , User]
-
+# review accounts system
 # create order , order now , order lists , order details and order cancel as [Guest , User]
+# make full scenario for guest and user and check flow bugs
+# add payments system
+# add loyalty program
 
 # make Home page
 # make Notification system
@@ -77,3 +80,7 @@ urlpatterns += [
 # make terms and conditions page
 # make privacy policy page
 
+
+# enhance system overall
+# improve performance and scalability
+# ensure security best practices
