@@ -61,13 +61,17 @@ urlpatterns += [
     path("cart/<slug:slug>/clear/", cart_clear, name="cart-clear"),
 ]
 
+from apps.coupons.views import apply_coupon
+urlpatterns += [
+    path("coupons/apply/", apply_coupon, name="apply-coupon"),
+]
 #  Cart Price -->  coupon applyied
 #  checkout  / total price --> Cart Price -order promotion + shipping cost
-# make address create/destroy/edit 
 # apply promotions and coupon in cart and checkout and order as [Guest , User]
-# review accounts system
 # create order , order now , order lists , order details and order cancel as [Guest , User]
+# make address create/destroy/edit 
 # make full scenario for guest and user and check flow bugs
+# review accounts system
 # add payments system
 # add loyalty program
 
