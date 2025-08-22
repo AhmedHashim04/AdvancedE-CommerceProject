@@ -9,27 +9,17 @@ urlpatterns = [
 ]
 
 # Add JWT  URLs / OAuth2 URLs
-
-from apps.accounts.views import RegisterView, ChangePasswordView, ForgetPasswordView, ResetPasswordConfirmView, ResetPasswordOTPConfirmView
+from dj_rest_auth.registration.views import VerifyEmailView
+from apps.accounts.views import RegisterView
 urlpatterns += [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
+ 
+    path("dj-rest-auth/account-confirm-email/<str:key>/",VerifyEmailView.as_view(),name="account_confirm_email",),
     path("dj-rest-auth/", include("dj_rest_auth.urls")),
-    path("dj-rest-auth/registration/", include("dj_rest_auth.registration.urls")),
+    path('registration/', RegisterView.as_view(), name='registration'),
     path("dj-rest-auth/google/", include("allauth.socialaccount.urls")),
-
-    path("register/", RegisterView.as_view(), name="register"),
-    path("change-password/", ChangePasswordView.as_view(), name="change-password"),
-
-    path("forget-password/", ForgetPasswordView.as_view(), name="forget-password"),
-
-    # لو المستخدم فتح اللينك اللي فيه JWT
-    path("reset-password/", ResetPasswordConfirmView.as_view(), name="reset-password"),
-
-    # لو المستخدم عايز يستخدم OTP بدل اللينك
-    path("reset-password-otp/", ResetPasswordOTPConfirmView.as_view(), name="reset-password-otp"),
 ]
 
 from apps.store.views import ProductListView, ProductDetailView, WishlistListView, WishlistAddView, WishlistRemoveView

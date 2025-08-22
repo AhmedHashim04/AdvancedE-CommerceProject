@@ -13,11 +13,19 @@ ROOT_URLCONF = "project.urls"
 WSGI_APPLICATION = "project.wsgi.application"
 
 INSTALLED_APPS = [
+    "django.contrib.sites",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    'django.contrib.humanize',
+
     "rest_framework",
     "rest_framework_simplejwt",
-    'rest_framework.authtoken',   # ← أضفه هنا
-    "rest_framework_simplejwt.token_blacklist", 
-    "django.contrib.sites",
+    'rest_framework.authtoken',
+
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -30,6 +38,7 @@ INSTALLED_APPS = [
     "apps.contact",
     "apps.cart",
     "apps.checkout",
+    "apps.coupons",
     "apps.orders",
     "apps.payments",
     "apps.reviews",
@@ -37,47 +46,23 @@ INSTALLED_APPS = [
     "apps.promotions",
     "apps.notifications",
     
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    'django.contrib.humanize',
 
     "drf_spectacular",
-    "drf_spectacular_sidecar",  # بيحتوي swagger-ui & redoc جاهزين
+    "drf_spectacular_sidecar",
   
 
 ]
-
-AUTH_USER_MODEL = "accounts.CustomUser"
-
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            'client_id':config('GOOGLE_CLIENT_ID'),
-            'secret':config('GOOGLE_CLIENT_SECRET'),
-            "key": ""
-        }
-    }
-}
-REST_USE_JWT = True
-JWT_AUTH_COOKIE = 'my-app-auth'
 
 
 SITE_ID = 1
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     ),
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # "DEFAULT_RENDERER_CLASSES": [
-    #     "rest_framework.renderers.JSONRenderer",  # فقط JSON
-    #     "rest_framework.renderers.BrowsableAPIRenderer",
-    # ],
+
 }
 
 from datetime import timedelta
@@ -93,9 +78,61 @@ SIMPLE_JWT = {
     # لو عايز تحقق من audience/issuer ممكن تضيفهم
 }
 
+EMAIL_REQUIRED = True
+UERNAME_REQUIRED = False
 
-LOGIN_REDIRECT_URL = '/' 
-LOGOUT_REDIRECT_URL = "/"
+REST_AUTH = {
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
+    'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+    'JWT_SERIALIZER_WITH_EXPIRATION': 'dj_rest_auth.serializers.JWTSerializerWithExpiration',
+    'JWT_TOKEN_CLAIMS_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+    'USER_DETAILS_SERIALIZER': 'dj_rest_auth.serializers.UserDetailsSerializer',
+    'PASSWORD_RESET_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetSerializer',
+    'PASSWORD_RESET_CONFIRM_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetConfirmSerializer',
+    'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
+
+    'REGISTER_SERIALIZER': 'apps.accounts.serializers.RegisterSerializer',
+
+    'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+
+    'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
+    'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
+
+    'PASSWORD_RESET_USE_SITES_DOMAIN': False,
+    'OLD_PASSWORD_FIELD_ENABLED': False,
+    'LOGOUT_ON_PASSWORD_CHANGE': False,
+    'SESSION_LOGIN': True,
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'my-app-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'my-refresh-token',
+    'JWT_AUTH_REFRESH_COOKIE_PATH': '/',
+    'JWT_AUTH_SECURE': False,
+    'JWT_AUTH_HTTPONLY': True,
+    'JWT_AUTH_SAMESITE': 'Lax',
+    'JWT_AUTH_RETURN_EXPIRATION': False,
+    'JWT_AUTH_COOKIE_USE_CSRF': False,
+    'JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED': False,
+}
+
+
+AUTH_USER_MODEL = "accounts.CustomUser"
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            'client_id':config('GOOGLE_CLIENT_ID'),
+            'secret':config('GOOGLE_CLIENT_SECRET'),
+            "key": ""
+        }
+    }
+}
+
+
+ACCOUNT_SIGNUP_FIELDS = {
+    "email": {"required": True},
+}
 
 
 
@@ -153,12 +190,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    # {
+    #     "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    # },
+    # {
+    #     "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    # },
 ]
 
 
@@ -190,7 +227,11 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = 'Modyex <%s>' % config('DEFAULT_FROM_EMAIL')
+# DEFAULT_FROM_EMAIL = 'Modyex <%s>' % config('DEFAULT_FROM_EMAIL')
+# 👇 ده لازم
+DEFAULT_FROM_EMAIL = "no-reply@yourdomain.com"
+# Backend وهمي (مش بيبعت ايميل حقيقي، بس يطبع في الـ console)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 STORE_OWNER_EMAIL = config('STORE_OWNER_EMAIL')
 SHIPPING_EMAIL = config('SHIPPING_EMAIL')
 

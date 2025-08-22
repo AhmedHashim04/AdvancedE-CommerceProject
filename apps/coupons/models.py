@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
-from cart.cart import Cart as ShoppingCart
+from apps.cart.cart import Cart as ShoppingCart
 User = get_user_model()
 
 from decimal import Decimal
@@ -133,7 +133,7 @@ class CouponRedemption(models.Model):
     """
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE,related_name="redemptions")
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    order = models.ForeignKey("order.Order", on_delete=models.SET_NULL, null=True, blank=True)
+    order = models.ForeignKey("orders.Order", on_delete=models.SET_NULL, null=True, blank=True)
     redeemed_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -256,7 +256,7 @@ COUNTRY_CHOICES = [
     ]
 
 class CustomUser(AbstractUser):
-    email = models.EmailField(_("email address"))
+    email = models.EmailField(_("email address"), unique=True)
     address = models.ForeignKey("Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     wishlist = models.ManyToManyField("store.Product",verbose_name=_("Wishlist"),blank=True)
 
