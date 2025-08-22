@@ -3,14 +3,86 @@ from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.utils import timezone
 import datetime
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import BaseUserManager, PermissionsMixin, UserManager
 import json
-# operation in account ap 
-['reset_password',
- 'addresses','update_address','set_default_address','delete_address',
- 'add_address','edit_address',
- 'wishlist','add_to_wishlist','remove_from_wishlist',
-]
+from django.contrib.auth.base_user import AbstractBaseUser
+import random
+from django.core.mail import send_mail
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.hashers import make_password
+
+
+class CustomUserManager(BaseUserManager):
+    use_in_migrations = True
+
+
+    def _create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Users must have an email address")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.password = make_password(password)
+        user.save(using=self._db)
+        return user
+    
+    def create_user(self, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return self._create_user( email, password, **extra_fields)
+
+    create_user.alters_data = True
+
+    async def _acreate_user(self, email, password, **extra_fields):
+        """See _create_user()"""
+        user = self._create_user_object( email, password, **extra_fields)
+        await user.asave(using=self._db)
+        return user
+
+    async def acreate_user(self, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return await self._acreate_user( email, password, **extra_fields)
+
+    acreate_user.alters_data = True
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self.create_user(email, password, **extra_fields)
+
+    def create_superuser(self,email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self._create_user(email, password, **extra_fields)
+
+    create_superuser.alters_data = True
+
+    async def acreate_superuser(  self, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return await self._acreate_user(email, password, **extra_fields)
+
+    acreate_superuser.alters_data = True
+
 
 COUNTRY_CHOICES = [
         ('AF', 'Afghanistan'),
@@ -255,15 +327,34 @@ COUNTRY_CHOICES = [
         ('ZW', 'Zimbabwe'),
     ]
 
-class CustomUser(AbstractUser):
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    is_staff = models.BooleanField(_("staff status"),default=False,help_text=_("Designates whether the user can log into this admin site."),)
+    is_active = models.BooleanField(_("active"),default=True,help_text=_("Designates whether this user should be treated as active. ""Unselect this instead of deleting accounts."),)
+    verified = models.BooleanField(_("verified"), default=False, help_text=_("Designates whether this user has verified their email address."))
+    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    objects = CustomUserManager()
+
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "email"
+    class Meta:
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
+
+    def clean(self):
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
+
+
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        """Send an email to this user."""
+        send_mail(subject, message, from_email, [self.email], **kwargs)
+    
     email = models.EmailField(_("email address"), unique=True)
     address = models.ForeignKey("Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     wishlist = models.ManyToManyField("store.Product",verbose_name=_("Wishlist"),blank=True)
 
     def __str__(self):
         return self.email
-
-
 
 class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,
@@ -292,14 +383,6 @@ class Address(models.Model):
             Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
         super().save(*args, **kwargs)
 
-
-class PasswordResetOTP(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    otp = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def is_valid(self):
-        return timezone.now() < self.created_at + datetime.timedelta(minutes=10)
 
 class UserActivityLog(models.Model):
 
@@ -351,3 +434,5 @@ class UserActivityLog(models.Model):
         """Helper لحفظ البيانات الإضافية بسهولة"""
         self.metadata = json.dumps(data)
         self.save()
+
+

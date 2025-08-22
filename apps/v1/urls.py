@@ -8,19 +8,51 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
 ]
 
+
+from django.urls import re_path
+
+from dj_rest_auth.app_settings import api_settings
+
+from dj_rest_auth.views import (
+    LogoutView, PasswordChangeView, PasswordResetConfirmView,
+    PasswordResetView,
+)
+
+
+
+
 # Add JWT  URLs / OAuth2 URLs
-from dj_rest_auth.registration.views import VerifyEmailView
-from apps.accounts.views import RegisterView
+from apps.accounts.views import RegisterView, LoginView, SendOTPView, VerifyOTPView 
 urlpatterns += [
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
- 
-    path("dj-rest-auth/account-confirm-email/<str:key>/",VerifyEmailView.as_view(),name="account_confirm_email",),
-    path("dj-rest-auth/", include("dj_rest_auth.urls")),
     path('registration/', RegisterView.as_view(), name='registration'),
-    path("dj-rest-auth/google/", include("allauth.socialaccount.urls")),
+
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+     # URLs that do not require a session or valid token
+    re_path(r'password/reset/?$', PasswordResetView.as_view(), name='rest_password_reset'),
+    re_path(r'password/reset/confirm/?$', PasswordResetConfirmView.as_view(), name='rest_password_reset_confirm'),
+    path('login/', LoginView.as_view(), name='login'),
+    
+    # URLs that require a user to be logged in with a valid session / token.
+    re_path(r'logout/?$', LogoutView.as_view(), name='rest_logout'),
+    re_path(r'password/change/?$', PasswordChangeView.as_view(), name='rest_password_change'),
+
+    path("otp/request/", SendOTPView.as_view(), name="otp_request"),
+    path("otp/verify/", VerifyOTPView.as_view(), name="otp_verify"),
+
+    path("google/", include("allauth.socialaccount.urls")),
 ]
+
+
+
+if api_settings.USE_JWT:
+    from rest_framework_simplejwt.views import TokenVerifyView
+
+    from dj_rest_auth.jwt_auth import get_refresh_view
+
+    urlpatterns += [
+        re_path(r'token/verify/?$', TokenVerifyView.as_view(), name='token_verify'),
+        re_path(r'token/refresh/?$', get_refresh_view().as_view(), name='token_refresh'),
+    ]
 
 from apps.store.views import ProductListView, ProductDetailView, WishlistListView, WishlistAddView, WishlistRemoveView
 

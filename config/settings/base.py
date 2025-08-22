@@ -78,8 +78,9 @@ SIMPLE_JWT = {
     # لو عايز تحقق من audience/issuer ممكن تضيفهم
 }
 
-EMAIL_REQUIRED = True
-UERNAME_REQUIRED = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_LOGIN_METHODS = {'email'}
 
 REST_AUTH = {
     'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
@@ -116,8 +117,7 @@ REST_AUTH = {
 }
 
 
-AUTH_USER_MODEL = "accounts.CustomUser"
-
+AUTH_USER_MODEL = "accounts.CustomUser" 
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -128,12 +128,6 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
-
-
-ACCOUNT_SIGNUP_FIELDS = {
-    "email": {"required": True},
-}
-
 
 
 TEMPLATES = [

@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 from faker import Faker
 import requests
 import random
-from apps.store.models import Product, Brand, Category, Tag, ProductImage, ProductColor, ShippingClass
+from apps.store.models import Product, Brand, Category, Tag, ProductImage, ProductColor
 
 fake = Faker()
 
@@ -51,17 +51,6 @@ class Command(BaseCommand):
             colors.append(color)
         self.stdout.write(self.style.SUCCESS(f"✅ Created {len(colors)} colors"))
 
-        # Create Shipping Classes
-        shipping_classes = []
-        for name in ["Standard", "Express", "Overnight"]:
-            sc = ShippingClass.objects.create(
-                name=name,
-                description=f"{name} shipping option",
-                price=random.uniform(20, 100)
-            )
-            shipping_classes.append(sc)
-        self.stdout.write(self.style.SUCCESS(f"✅ Created {len(shipping_classes)} shipping classes"))
-
         # Create Product Images
         images = []
         for _ in range(15):
@@ -93,7 +82,6 @@ class Command(BaseCommand):
                 low_stock_threshold=5,
                 is_active=True,
                 is_featured=random.choice([True, False]),
-                shipping_class=random.choice(shipping_classes),
                 weight=random.uniform(0.5, 5.0),
                 width=random.uniform(10, 50),
                 height=random.uniform(10, 50),

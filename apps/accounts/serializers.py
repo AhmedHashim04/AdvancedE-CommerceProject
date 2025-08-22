@@ -1,27 +1,26 @@
-from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
-from rest_framework import serializers
 from allauth.account import app_settings as allauth_account_settings
 from allauth.account.adapter import get_adapter
-from allauth.account.utils import setup_user_email
-from allauth.socialaccount.models import EmailAddress
-
-
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
+from django.urls import exceptions as url_exceptions
+from rest_framework import exceptions, serializers
+UserModel = get_user_model()
 
 class RegisterSerializer(serializers.Serializer):
-    _has_phone_field = False  
-    email = serializers.EmailField(required=allauth_account_settings.EMAIL_REQUIRED)
+    email = serializers.EmailField(required=True)
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
+    _has_phone_field = None
+
 
     def validate_email(self, email):
         email = get_adapter().clean_email(email)
-        if allauth_account_settings.UNIQUE_EMAIL:
-            if email and EmailAddress.objects.is_verified(email):
-                raise serializers.ValidationError(
-                    _('A user is already registered with this e-mail address.'),
-                )
+        if email and get_user_model().objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                _('A user is already registered with this e-mail address.'),
+            )
         return email
 
     def validate_password1(self, password):
@@ -31,9 +30,6 @@ class RegisterSerializer(serializers.Serializer):
         if data['password1'] != data['password2']:
             raise serializers.ValidationError(_("The two password fields didn't match."))
         return data
-
-    def custom_signup(self, request, user):
-        pass
 
     def get_cleaned_data(self):
         return {
@@ -54,22 +50,9 @@ class RegisterSerializer(serializers.Serializer):
                     detail=serializers.as_serializer_error(exc)
                 )
         user.save()
-        self.custom_signup(request, user)
-        setup_user_email(request, user, [])
         return user
 
 
-    
-
-from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
-from django.contrib.auth.forms import SetPasswordForm, PasswordResetForm
-from django.urls import exceptions as url_exceptions
-from django.utils.encoding import force_str
-from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions, serializers
-from rest_framework.exceptions import ValidationError
-UserModel = get_user_model()
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_blank=False)
@@ -87,29 +70,23 @@ class LoginSerializer(serializers.Serializer):
 
         return user
 
-    def _validate_email(self, email, password):
+    def _validate_email(self,  email, password):
         if email and password:
             user = self.authenticate(email=email, password=password)
         else:
-            msg = _('Must include either "email" and "password".')
+            msg = _('Must include "email" and "password".')
             raise exceptions.ValidationError(msg)
 
         return user
 
     def get_auth_user_using_allauth(self, email, password):
-        from allauth.account import app_settings as allauth_account_settings
 
-        # Authentication through email
-        if allauth_account_settings.AUTHENTICATION_METHOD == allauth_account_settings.AuthenticationMethod.EMAIL:
-            return self._validate_email(email, password)
+        return self._validate_email(email, password)
 
-
-        return self._validate_email( email, password)
-
-    def get_auth_user_using_orm(self,  email, password):
+    def get_auth_user_using_orm(self, email, password):
         if email:
             try:
-                new_email = UserModel.objects.get(email__iexact=email)
+                username = UserModel.objects.get(email__iexact=email).get_username()
             except UserModel.DoesNotExist:
                 pass
 
@@ -128,11 +105,11 @@ class LoginSerializer(serializers.Serializer):
             # When `is_active` of a user is set to False, allauth tries to return template html
             # which does not exist. This is the solution for it. See issue #264.
             try:
-                return self.get_auth_user_using_allauth( email, password)
+                return self.get_auth_user_using_allauth(email, password)
             except url_exceptions.NoReverseMatch:
                 msg = _('Unable to log in with provided credentials.')
                 raise exceptions.ValidationError(msg)
-        return self.get_auth_user_using_orm( email, password)
+        return self.get_auth_user_using_orm(email, password)
 
     @staticmethod
     def validate_auth_user_status(user):
@@ -142,16 +119,13 @@ class LoginSerializer(serializers.Serializer):
 
     @staticmethod
     def validate_email_verification_status(user, email=None):
-        from allauth.account import app_settings as allauth_account_settings
-        if (
-            allauth_account_settings.EMAIL_VERIFICATION == allauth_account_settings.EmailVerificationMethod.MANDATORY and not user.emailaddress_set.filter(email=user.email, verified=True).exists()
-        ):
-            raise serializers.ValidationError(_('E-mail is not verified.'))
+        if not UserModel.objects.filter(email=user.email, verified=True).exists():
+            raise serializers.ValidationError({"error":'E-mail is not verified.'})
 
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
-        user = self.get_auth_user( email, password)
+        user = self.get_auth_user(email, password)
 
         if not user:
             msg = _('Unable to log in with provided credentials.')
