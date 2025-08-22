@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.debug import sensitive_post_parameters
@@ -10,13 +11,13 @@ from dj_rest_auth.models import TokenModel
 from django.contrib.auth import login as django_login, get_user_model
 from django.utils import timezone
 from dj_rest_auth.jwt_auth import set_jwt_cookies
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from dj_rest_auth.utils import jwt_encode
 from rest_framework.views import APIView
+from django.contrib.auth.password_validation import validate_password
 import random
 from django.core.cache import cache
 from django.core.mail import send_mail
-
 
 sensitive_post_parameters_m = method_decorator(
     sensitive_post_parameters('password1', 'password2'),)
@@ -186,3 +187,127 @@ class LoginView(GenericAPIView):
         self.login()
         return self.get_response()
 
+
+
+
+User = get_user_model()
+
+
+class PasswordResetView(GenericAPIView):
+    """
+    Step 1: Request OTP for password reset.
+    Accepts: email
+    Sends OTP to user's email.
+    """
+    permission_classes = (AllowAny,)
+    throttle_scope = 'dj_rest_auth'
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "User with this email does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # توليد OTP
+        otp = random.randint(100000, 999999)
+        cache.set(f"reset_otp_{email}", otp, timeout=300)  # 5 دقايق صلاحية
+
+        # send_mail(
+        #     subject="Password Reset OTP",
+        #     message=f"Your OTP for password reset is {otp}",
+        #     from_email=settings.DEFAULT_FROM_EMAIL,
+        #     recipient_list=[email],
+        # )
+        print(f"Password Reset OTP for {email}: {otp}")
+
+        return Response(
+            {'detail': _('OTP has been sent to your email.'), 'OTP': otp},  # فقط للاختبار، احذفها في الإنتاج
+            status=status.HTTP_200_OK,
+        )
+
+@method_decorator(sensitive_post_parameters('password1', 'password2', 'new_password1', 'new_password2'), name='dispatch')
+class PasswordResetConfirmView(GenericAPIView):
+    """
+    Step 2: Confirm OTP and reset password.
+    Accepts: email, otp, new_password1, new_password2
+    """
+    permission_classes = (AllowAny,)
+    throttle_scope = 'dj_rest_auth'
+
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        otp = request.data.get("otp")
+        password1 = request.data.get("new_password1")
+        password2 = request.data.get("new_password2")
+
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not otp:
+            return Response({"error": "OTP is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not password1:
+            return Response({"error": "New password is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not password2:
+            return Response({"error": "Confirm new password is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_password(password1)
+        except ValidationError as e:
+            return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+
+        if password1 != password2:
+            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cached_otp = cache.get(f"reset_otp_{email}")
+        if not cached_otp or str(cached_otp) != str(otp):
+            return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # تغيير الباسورد
+        user.set_password(password1)
+        user.save()
+
+        # مسح الـ OTP
+        cache.delete(f"reset_otp_{email}")
+
+        return Response(
+            {'detail': _('Password has been reset successfully.')},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordChangeView(GenericAPIView):
+    """
+    Change password (for logged in users).
+    Accepts: new_password1, new_password2
+    """
+    permission_classes = (IsAuthenticated,)
+    throttle_scope = 'dj_rest_auth'
+
+    @sensitive_post_parameters()
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        password1 = request.data.get("new_password1")
+        password2 = request.data.get("new_password2")
+
+        if not password1 or not password2:
+            return Response({"error": "Both password fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if password1 != password2:
+            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        user.set_password(password1)
+        user.save()
+
+        return Response({'detail': _('New password has been saved.')}, status=status.HTTP_200_OK)
