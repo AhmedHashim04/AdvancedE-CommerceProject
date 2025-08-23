@@ -70,6 +70,7 @@ class LoginSerializer(serializers.Serializer):
 
         return user
 
+
     def _validate_email(self,  email, password):
         if email and password:
             user = self.authenticate(email=email, password=password)

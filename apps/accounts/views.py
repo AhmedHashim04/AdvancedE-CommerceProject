@@ -90,7 +90,7 @@ class SendOTPView(APIView):
         #     fail_silently=False,
         # )
         print(f"OTP sent to {email}: {otp}")
-        return Response({"message": "OTP sent to email"}, status=status.HTTP_200_OK)
+        return Response({"message": "OTP sent to email", "OTP": otp}, status=status.HTTP_200_OK)
 
 class VerifyOTPView(APIView):
     """

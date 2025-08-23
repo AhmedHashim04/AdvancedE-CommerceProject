@@ -1,5 +1,5 @@
 from .models import Product
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import ProductSerializer
@@ -206,18 +206,34 @@ class WishlistAddView(APIView):
     serializer_class = EmptySerializer
 
     def post(self, request):
-        product = get_object_or_404(Product, id=request.data.get("product_id"))
-        request.user.wishlist.add(product)
-        return Response({"status": "added"})
+        try:
+            product_slug = request.data.get("product_slug")
+            product = get_object_or_404(Product, slug=product_slug)
+            if product in request.user.wishlist.all():
+                return Response({"status": "already in wishlist"}, status=status.HTTP_400_BAD_REQUEST)
+            request.user.wishlist.add(product)
+            
+            return Response({"status": "added"})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class WishlistRemoveView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EmptySerializer
 
     def post(self, request):
-        product = get_object_or_404(Product, id=request.data.get("product_id"))
-        request.user.wishlist.remove(product)
-        return Response({"status": "removed"})
+        try:
+            product_slug = request.data.get("product_slug")
+            
+            product = get_object_or_404(Product, slug=product_slug)
+            if product not in request.user.wishlist.all():
+                return Response({"status": "not in wishlist"}, status=status.HTTP_400_BAD_REQUEST)
+            request.user.wishlist.remove(product)
+            
+            return Response({"status": "removed"})
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # class WishlistViewSet(viewsets.ViewSet):

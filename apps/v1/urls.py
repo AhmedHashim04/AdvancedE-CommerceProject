@@ -40,7 +40,7 @@ urlpatterns += [
     
     # URLs that require a user to be logged in with a valid session / token.
     path('logout/', LogoutView.as_view(), name='rest_logout'),
-    path('password/change/', PasswordChangeView.as_view(), name='password_change'),
+    path('password/change/', PasswordChangeView.as_view(), name='password_change'), #there is aproblem make it must authentication
 
     path("otp/request/", SendOTPView.as_view(), name="otp_request"),
     path("otp/verify/", VerifyOTPView.as_view(), name="otp_verify"),
@@ -55,7 +55,7 @@ from apps.store.views import ProductListView, ProductDetailView, WishlistListVie
 urlpatterns += [
 
     path("products/", ProductListView.as_view(), name="product-list"),
-    path("<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
+    path("products/<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
 
     path("wishlist/", WishlistListView.as_view(), name="wishlist-list"),
     path("wishlist/add/", WishlistAddView.as_view(), name="wishlist-add"),
@@ -69,6 +69,7 @@ urlpatterns += [
     path("<slug:slug>/reviews/remove/", ReviewDestroyView.as_view(), name="review-remove"),
 
 ]
+
 from apps.cart.views import CartListView, cart_add, cart_update, cart_remove, cart_clear
 urlpatterns += [
 
@@ -76,7 +77,7 @@ urlpatterns += [
     path("cart/<slug:slug>/add/", cart_add, name="cart-add"),
     path("cart/<slug:slug>/update/", cart_update, name="cart-update"),
     path("cart/<slug:slug>/remove/", cart_remove, name="cart-remove"),
-    path("cart/<slug:slug>/clear/", cart_clear, name="cart-clear"),
+    path("cart/clear/", cart_clear, name="cart-clear"),
 ]
 
 from apps.coupons.views import apply_coupon
