@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
-from apps.cart.cart import Cart as ShoppingCart
+
 User = get_user_model()
 
 from decimal import Decimal
@@ -51,10 +51,9 @@ class Coupon(models.Model):
             raise ValidationError("Percentage discount cannot exceed 100%.")
 
     # ------------------- Validation -------------------
-    def is_valid(self, user=None,  date=None):
-        now = date or timezone.now()
-        cart = ShoppingCart(self.request)
-        cart_total = cart.get_total_price()
+    def is_valid(self, cart_total, user=None):
+        
+        now = timezone.now()
         if not self.is_active:
             return False, "Coupon is not active."
         if not (self.start_date <= now <= self.end_date):
@@ -71,12 +70,10 @@ class Coupon(models.Model):
         return True, None
 
     # ------------------- Discount Logic -------------------
-    def apply_discount(self):
+    def apply_discount(self, cart):
         discount = Decimal("0.00")
         message = "Coupon applied."
-        cart = ShoppingCart(self.request)
         cart_total = cart.get_total_price()
-
         if self.discount_type == self.DiscountType.PERCENTAGE:
             for item in cart:
                 if self.applicable_products.exists() and item.product not in self.applicable_products.all():
@@ -85,9 +82,10 @@ class Coupon(models.Model):
                     continue
                 if self.applicable_brands.exists() and item.product.brand not in self.applicable_brands.all():
                     continue
-                item_discount = (item.price * self.value / Decimal("100"))
-                discount += item_discount * item.quantity
-            message = f"Total price will be discounted by {self.value}%"
+
+                item_discount = (item['price_after_discount'] * self.value / Decimal("100"))
+                discount += item_discount * item['quantity']
+            message = f"Total price will be discounted by {self.value} %"
 
         elif self.discount_type == self.DiscountType.FIXED_AMOUNT:
             discount = Decimal(self.value)

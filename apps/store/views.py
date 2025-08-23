@@ -145,7 +145,8 @@ class ProductDetailView(generics.RetrieveAPIView):
             Product.objects.filter(category=product.category,is_active=True,is_in_stock=True)
             .exclude(id=product.id)
             .select_related('category'
-            ).values('id','category__name', 'name', 'slug', 'main_image')
+                ).values('id','category__name', 'name', 'slug', 'main_image',
+                "price","currency","tax_rate","compare_at_price")
             [:max_related]
         )
 
@@ -157,7 +158,8 @@ class ProductDetailView(generics.RetrieveAPIView):
                 additional_products =Product.objects.filter(
                 category=product.category,is_active=True,is_in_stock=True
                 ).exclude(id__in=excluded_ids
-                ).values('id','category__name', 'name', 'slug', 'main_image')[
+                ).values('id','category__name', 'name', 'slug', 'main_image',
+                "price","currency","tax_rate","compare_at_price")[
                     :max_related - len(related_products)
                 ]
                 related_products += list(additional_products)

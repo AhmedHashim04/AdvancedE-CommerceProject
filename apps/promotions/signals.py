@@ -5,7 +5,6 @@ from .models import Promotion
 @receiver(post_save, sender=Promotion)
 def update_products(sender, instance, **kwargs):
     if instance.discount_type == 'percentage':
-
         if instance.apply_to == 'products':
             for product in instance.products.all():
                 product.price = product.compare_at_price * (1 - instance.value / 100)

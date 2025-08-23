@@ -80,10 +80,12 @@ urlpatterns += [
     path("cart/clear/", cart_clear, name="cart-clear"),
 ]
 
-from apps.coupons.views import apply_coupon
+from apps.coupons.views import apply_coupon, remove_coupon
 urlpatterns += [
     path("coupons/apply/", apply_coupon, name="apply-coupon"),
+    path("coupons/remove/", remove_coupon, name="remove-coupon"),
 ]
+
 #  Cart Price -->  coupon applyied
 #  checkout  / total price --> Cart Price -order promotion + shipping cost
 # apply promotions and coupon in cart and checkout and order as [Guest , User]

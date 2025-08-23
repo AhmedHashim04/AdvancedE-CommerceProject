@@ -110,14 +110,6 @@ class Promotion(models.Model):
     def __str__(self):
         return self.name
 
-class ProductPromotion(models.Model):
-    product = models.ForeignKey('store.Product', on_delete=models.CASCADE)
-    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE)
-    assigned_at = models.DateTimeField(auto_now_add=True)
-
-    # class Meta:
-    #     unique_together = ("product", "promotion")
-
 class FlashSale(models.Model):
     name = models.CharField(max_length=255)
     products = models.ManyToManyField('store.Product')

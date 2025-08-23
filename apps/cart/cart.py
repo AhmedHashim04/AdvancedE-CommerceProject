@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.timezone import now
 from apps.store.models import Product
+from apps.coupons.models import Coupon
 
 Addition_Shipping_Cost = 10
 
@@ -86,15 +87,15 @@ class Cart:
             if not product:
                 continue
 
-            discount_amount = Decimal(item["compare_at_price"]) - Decimal(item["discount"]) 
+            discount_amount = Decimal(item["price_after_discount"]) - Decimal(item["discount"]) 
 
             yield {
                 "product" : product,
                 "tax_rate" : product.tax_rate,
                 "quantity" : item["quantity"],
-                "price" : Decimal(item["compare_at_price"]),
+                "price" : Decimal(item["price"]),
                 "discount" : discount_amount,
-                "price_after_discount" : Decimal(item["price"]),
+                "price_after_discount" : Decimal(item["price_after_discount"]),
                 "added_at" : item.get("added_at"),
                 "subtotal" : Decimal(item["subtotal"]),
             }
@@ -151,27 +152,49 @@ class Cart:
 
     def get_total_price(self):
         return sum(
-            Decimal(item["price"]) for item in self.cart.values()
+            Decimal(item["price"])*Decimal(item["quantity"]) for item in self.cart.values()
         )
 
     def get_total_discount(self):
         return sum(
-            Decimal(item["discount"]) for item in self.cart.values()
+            Decimal(item["discount"])*Decimal(item["quantity"]) for item in self.cart.values()
         )
 
     def get_total_price_after_discount(self):
         return self.get_total_price() - self.get_total_discount()
 
-    # def get_addition_cost(self):
-    #     return Addition_Shipping_Cost * (len(self)-3) if (len(self)) > 3 else 0
+
+    def get_applied_coupon(self):
+        coupon_id = self.session.get('applied_coupon_id')
+        if coupon_id:
+            try:
+                return Coupon.objects.get(id=coupon_id)
+            except Coupon.DoesNotExist:
+                return None
+        return None
+
+    def get_discount_from_coupon(self):
+        coupon = self.get_applied_coupon()
+        if coupon:
+            discount, _ = coupon.apply_discount(self)
+            return discount
+        return Decimal("0.00")
+
+    def get_final_total(self):
+        total_after_discount = self.get_total_price_after_discount()
+        coupon_discount = self.get_discount_from_coupon()
+        return total_after_discount - coupon_discount
+
 
     def get_cart_summary(self):
-        total_price_after_discount = self.get_total_price_after_discount()# + self.get_addition_cost()
+        total_price_after_discount = self.get_total_price_after_discount()
+        coupon_discount = self.get_discount_from_coupon()
+        final_total = total_price_after_discount - coupon_discount
 
         return {
             "total_items": len(self),
             "total_price": self.get_total_price(),
             "total_discount": self.get_total_discount(),
-            # "addition_cost": self.get_addition_cost(),
-            "total_price_after_discount": total_price_after_discount,
+            "coupon_discount": coupon_discount,
+            "total_price_after_discount": final_total,
         }
