@@ -18,6 +18,8 @@ from django.contrib.auth.password_validation import validate_password
 import random
 from django.core.cache import cache
 from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import logout
 
 sensitive_post_parameters_m = method_decorator(
     sensitive_post_parameters('password1', 'password2'),)
@@ -54,7 +56,7 @@ class RegisterView(CreateAPIView):
         print(f"OTP sent to {user.email}: {otp}")
 
         return Response(
-            {"message": "Account created. OTP sent to your email. Please verify."},
+            {"message": "Account created. OTP sent to your email. Please verify.", "OTP": otp},
             status=status.HTTP_201_CREATED
         )
 
@@ -278,12 +280,22 @@ class PasswordResetConfirmView(GenericAPIView):
         # مسح الـ OTP
         cache.delete(f"reset_otp_{email}")
 
+        # حذف التوكن القديم (logout)
+        if hasattr(user, 'auth_token'):
+            user.auth_token.delete()
+        # حذف كل التوكنات القديمة (JWT)
+        try:
+            RefreshToken.for_user(user)
+        except Exception:
+            pass
+
         return Response(
             {'detail': _('Password has been reset successfully.')},
             status=status.HTTP_200_OK,
         )
 
 
+@method_decorator(sensitive_post_parameters('old_password', 'new_password1', 'new_password2'), name='dispatch')
 class PasswordChangeView(GenericAPIView):
     """
     Change password (for logged in users).
@@ -291,23 +303,40 @@ class PasswordChangeView(GenericAPIView):
     """
     permission_classes = (IsAuthenticated,)
     throttle_scope = 'dj_rest_auth'
-
-    @sensitive_post_parameters()
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     def post(self, request, *args, **kwargs):
+        old_password = request.data.get("old_password")
         password1 = request.data.get("new_password1")
         password2 = request.data.get("new_password2")
 
+        if not old_password:
+            return Response({"error": "Old password is required."}, status=status.HTTP_400_BAD_REQUEST)
         if not password1 or not password2:
-            return Response({"error": "Both password fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Both new password fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        if not user.check_password(old_password):
+            return Response({"error": "Old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
 
         if password1 != password2:
             return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = request.user
+        try:
+            validate_password(password1, user)
+        except ValidationError as e:
+            return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+
         user.set_password(password1)
         user.save()
 
-        return Response({'detail': _('New password has been saved.')}, status=status.HTTP_200_OK)
+        # حذف التوكن القديم (logout)
+        if hasattr(user, 'auth_token'):
+            user.auth_token.delete()
+        # حذف كل التوكنات القديمة (JWT)
+        try:
+            RefreshToken.for_user(user)
+        except Exception:
+            pass
+
+        logout(request)
+
+        return Response({'detail': _('New password has been saved. Please login again.')}, status=status.HTTP_200_OK)
