@@ -1,13 +1,11 @@
 from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
-from django.core.validators import MinValueValidator, MaxValueValidator
+from apps.seller.models import Seller
 from apps.promotions.models import Promotion, FlashSale
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-
-from decimal import Decimal, ROUND_HALF_UP
 
 # -------------------------------------
 # Related Models
@@ -84,8 +82,18 @@ class Currency(models.TextChoices):
     JPY = "JPY", _("Japanese Yen")
     AUD = "AUD", _("Australian Dollar")
 
-    # owner =
-class Product(models.Model):
+
+class SEOFieldsMixin(models.Model):
+    meta_title = models.CharField(max_length=255, blank=True)
+    meta_description = models.TextField(blank=True)
+    meta_keywords = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        abstract = True
+
+class Product(SEOFieldsMixin, models.Model):
+    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products")
+
     name = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
@@ -110,7 +118,7 @@ class Product(models.Model):
     allow_backorder = models.BooleanField(default=False)
 
     main_image = models.ImageField(upload_to="products/main_images/", blank=True, null=True)
-    gallery = models.ManyToManyField('ProductImage', blank=True)
+    gallery = models.ForeignKey(ProductImage, on_delete=models.CASCADE, blank=True, null=True, related_name="product_gallery")
     video_url = models.URLField(blank=True, null=True)
     view_360_url = models.URLField(blank=True, null=True)
 
@@ -120,11 +128,7 @@ class Product(models.Model):
     width = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     height = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    free_shipping = models.BooleanField(default=False)
 
-    meta_title = models.CharField(max_length=255, blank=True)
-    meta_description = models.TextField(blank=True)
-    meta_keywords = models.CharField(max_length=255, blank=True)
 
     has_variants = models.BooleanField(default=False)
     attributes = models.JSONField(blank=True, null=True)
@@ -154,6 +158,11 @@ class Product(models.Model):
     def is_low_stock(self):
         """تحقق إذا المخزون قليل"""
         return self.stock_quantity <= self.low_stock_threshold
+
+    def get_volume(self):
+        if self.width and self.height and self.depth:
+            return self.width * self.height * self.depth
+        return None
 
     # دالة للتحقق من توفر العروض
     def active_promotions(self):

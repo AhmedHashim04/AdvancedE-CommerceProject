@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-
+from apps.seller.models import Seller
 
 class OrderStatus(models.TextChoices):
     PENDING = "pending", _("Pending")
@@ -44,13 +44,15 @@ class Order(models.Model):
 
     id = models.UUIDField(_("ID"), primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="orders", verbose_name=_("User"))
+    seller = models.OneToOneField(Seller, on_delete=models.CASCADE, related_name="order")
+
     ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
 
     address = models.ForeignKey("accounts.Address", on_delete=models.PROTECT, related_name="orders", verbose_name=_("Address"))
     full_name = models.CharField(max_length=100, verbose_name=_("Full Name"))
     notes = models.TextField(blank=True, null=True, verbose_name=_("Additional Notes"))
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, verbose_name=_("Status"))
-    payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.COD, verbose_name=_("Payment Method"))
+    payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CASH_ON_DELIVERY, verbose_name=_("Payment Method"))
     shipping_method = models.CharField(max_length=20, choices=ShippingClass.choices, default=ShippingClass.STANDARD, verbose_name=_("Shipping Method"))
 
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Shipping Cost"))

@@ -94,6 +94,7 @@ urlpatterns += [
     path("orders/<uuid:id>/cancel/", OrderCancelView.as_view(), name="order-cancel"),
 ]
 
+# Make Sellers System
 # make shipping system
 # add payments system
 # make address create/destroy/edit 
@@ -112,3 +113,4 @@ urlpatterns += [
 # enhance system overall
 # improve performance and scalability
 # ensure security best practices
+# make tests in system overall
