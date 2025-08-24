@@ -36,11 +36,16 @@ class BankAccount(models.Model):
 
 
 class TaxInfo(models.Model):
-    """المعلومات الضريبية للبائع"""
     seller = models.OneToOneField(Seller, on_delete=models.CASCADE, related_name="tax_info")
     tax_id = models.CharField(max_length=50, unique=True)  # الرقم الضريبي / VAT
     document = models.FileField(upload_to="tax_docs/")
     verified = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.verified:
+            self.verified_at = models.DateTimeField(auto_now_add=True)
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Tax Info")

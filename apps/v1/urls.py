@@ -12,17 +12,22 @@ urlpatterns = [
 from django.urls import re_path
 
 from dj_rest_auth.app_settings import api_settings
+from rest_framework.routers import DefaultRouter
 
 from dj_rest_auth.views import (
     LogoutView
 )
 
-
-
+router = DefaultRouter()
 
 # Add JWT  URLs / OAuth2 URLs
 from apps.accounts.views import RegisterView, LoginView, SendOTPView, VerifyOTPView, \
-                                PasswordChangeView, PasswordResetConfirmView, PasswordResetView
+                                PasswordChangeView, PasswordResetConfirmView, PasswordResetView, \
+                                AddressViewSet
+
+
+    # Register the AddressViewSet with the router
+router.register("addresses", AddressViewSet, basename="address")
 urlpatterns += [
     path('registration/', RegisterView.as_view(), name='registration'),
 
@@ -37,7 +42,8 @@ urlpatterns += [
     path('password/reset/confirm/',PasswordResetConfirmView.as_view(),name='password_reset_confirm'),
 
     path('login/', LoginView.as_view(), name='login'),
-    
+
+
     # URLs that require a user to be logged in with a valid session / token.
     path('logout/', LogoutView.as_view(), name='rest_logout'),
     path('password/change/', PasswordChangeView.as_view(), name='password_change'), #there is aproblem make it must authentication
@@ -103,7 +109,8 @@ from apps.sellers.views import (
     PayoutViewSet,
 )
 
-router = DefaultRouter()
+
+
 router.register('sellers', SellerViewSet, basename='seller')
 router.register('bank-accounts', BankAccountViewSet, basename='bankaccount')
 router.register('tax-info', TaxInfoViewSet, basename='taxinfo')
@@ -111,8 +118,8 @@ router.register('products', ProductViewSet, basename='seller_products')
 router.register('orders', OrderViewSet, basename='seller_orders')
 router.register('payouts', PayoutViewSet, basename='seller_payout')
 
-urlpatterns = [
-    path('', include(router.urls)),
+urlpatterns += [
+    path("", include(router.urls)),
 ]
 
 # Make Sellers System
