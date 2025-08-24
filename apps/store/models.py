@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
-from apps.seller.models import Seller
+from apps.sellers.models import Seller
 from apps.promotions.models import Promotion, FlashSale
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _

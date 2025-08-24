@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from .models import Seller, BankAccount, TaxInfo, Payout
 from apps.store.models import Product
 from apps.orders.models import Order
-from apps.seller.serializers import (
+from apps.sellers.serializers import (
     SellerSerializer, BankAccountSerializer, TaxInfoSerializer, 
     PayoutSerializer)
 from apps.store.serializers import ProductSerializer

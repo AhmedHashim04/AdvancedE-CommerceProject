@@ -93,6 +93,27 @@ urlpatterns += [
     path("orders/create/", OrderCreateView.as_view(), name="order-create"),
     path("orders/<uuid:id>/cancel/", OrderCancelView.as_view(), name="order-cancel"),
 ]
+from rest_framework.routers import DefaultRouter
+from apps.sellers.views import (
+    SellerViewSet,
+    BankAccountViewSet,
+    TaxInfoViewSet,
+    ProductViewSet,
+    OrderViewSet,
+    PayoutViewSet,
+)
+
+router = DefaultRouter()
+router.register('sellers', SellerViewSet, basename='seller')
+router.register('bank-accounts', BankAccountViewSet, basename='bankaccount')
+router.register('tax-info', TaxInfoViewSet, basename='taxinfo')
+router.register('products', ProductViewSet, basename='seller_products')
+router.register('orders', OrderViewSet, basename='seller_orders')
+router.register('payouts', PayoutViewSet, basename='seller_payout')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
 
 # Make Sellers System
 # make shipping system

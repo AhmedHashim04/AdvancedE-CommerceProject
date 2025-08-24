@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from apps.seller.models import Seller
+from apps.sellers.models import Seller
 
 class OrderStatus(models.TextChoices):
     PENDING = "pending", _("Pending")
