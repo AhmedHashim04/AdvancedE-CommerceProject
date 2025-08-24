@@ -86,19 +86,22 @@ urlpatterns += [
     path("coupons/remove/", remove_coupon, name="remove-coupon"),
 ]
 
-#  Cart Price -->  coupon applyied
-#  checkout  / total price --> Cart Price -order promotion + shipping cost
-# apply promotions and coupon in cart and checkout and order as [Guest , User]
-# create order , order now , order lists , order details and order cancel as [Guest , User]
-# make address create/destroy/edit 
-# make full scenario for guest and user and check flow bugs
-# review accounts system
+from apps.orders.views import OrderCancelView, OrderCreateView, OrderDetailView, OrderListView
+urlpatterns += [
+    path("orders/", OrderListView.as_view(), name="order-list"),
+    path("orders/<uuid:id>/", OrderDetailView.as_view(), name="order-detail"),
+    path("orders/create/", OrderCreateView.as_view(), name="order-create"),
+    path("orders/<uuid:id>/cancel/", OrderCancelView.as_view(), name="order-cancel"),
+]
+
+# make shipping system
 # add payments system
+# make address create/destroy/edit 
+# link order system with payments and address system
+# make Notification system
 # add loyalty program
 
 # make Home page
-# make Notification system
-# make Payment system
 # make contact us page
 # make newsletter system
 # make about us page

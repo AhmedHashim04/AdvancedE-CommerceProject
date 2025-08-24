@@ -34,9 +34,6 @@ class PaymentMethod(models.TextChoices):
     BNPL_VALU = "bnpl_valu", _("Buy Now Pay Later (valU)")
     BNPL_TABBY = "bnpl_tabby", _("Buy Now Pay Later (Tabby)")
 
-    # بوابات الدفع
-    # NOON_PAY = "noon_pay", _("Noon Pay")
-    # AMAZON_PAY = "amazon_pay", _("Amazon Pay")
 
 class ShippingClass(models.TextChoices):
     STANDARD = "standard", _("Standard Shipping")
