@@ -73,7 +73,7 @@ class Coupon(models.Model):
     def apply_discount(self, cart):
         discount = Decimal("0.00")
         message = "Coupon applied."
-        cart_total = cart.get_total_price()
+        
         if self.discount_type == self.DiscountType.PERCENTAGE:
             for item in cart:
                 if self.applicable_products.exists() and item.product not in self.applicable_products.all():
@@ -91,44 +91,42 @@ class Coupon(models.Model):
             discount = Decimal(self.value)
             message = f"Total price will be discounted by {self.value}"
 
-        elif self.discount_type == self.DiscountType.FREE_SHIPPING:
-            discount = Decimal("0.00")
-            message = "Free shipping will be applied to your order."
+        # elif self.discount_type == self.DiscountType.FREE_SHIPPING:
+        #     discount = Decimal("0.00")
+        #     message = "Free shipping will be applied to your order."
 
-        elif self.discount_type == self.DiscountType.BOGO:
-            for item in cart:
-                if self.applicable_products.exists() and item.product not in self.applicable_products.all():
-                    continue
-                free_qty = item.quantity // 2
-                discount += free_qty * item.price
-            message = "Buy one get one offer applied."
+        # elif self.discount_type == self.DiscountType.BOGO:
+        #     for item in cart:
+        #         if self.applicable_products.exists() and item.product not in self.applicable_products.all():
+        #             continue
+        #         free_qty = item.quantity // 2
+        #         discount += free_qty * item.price
+        #     message = "Buy one get one offer applied."
 
-        elif self.discount_type == self.DiscountType.GIFT:
-            discount = Decimal(self.gift_balance or 0)
-            message = f"Gift voucher applied: {discount}"
+        # elif self.discount_type == self.DiscountType.GIFT:
+        #     discount = Decimal(self.gift_balance or 0)
+        #     message = f"Gift voucher applied: {discount}"
 
-        elif self.discount_type == self.DiscountType.TIERED:
-            tiers = [
-                (Decimal("1000.00"), Decimal("20")),  # 20% for >= 1000
-                (Decimal("500.00"), Decimal("10")),   # 10% for >= 500
-            ]
-            applied = False
-            for min_amount, percent in tiers:
-                if cart_total >= min_amount:
-                    discount = cart_total * percent / Decimal("100")
-                    message = f"Tiered discount: {percent}% off for orders above {min_amount}"
-                    applied = True
-                    break
-            if not applied:
-                message = "No tiered discount applied."
+        # elif self.discount_type == self.DiscountType.TIERED:
+        #     tiers = [
+        #         (Decimal("1000.00"), Decimal("20")),  # 20% for >= 1000
+        #         (Decimal("500.00"), Decimal("10")),   # 10% for >= 500
+        #     ]
+        #     applied = False
+        #     for min_amount, percent in tiers:
+        #         if cart_total >= min_amount:
+        #             discount = cart_total * percent / Decimal("100")
+        #             message = f"Tiered discount: {percent}% off for orders above {min_amount}"
+        #             applied = True
+        #             break
+        #     if not applied:
+        #         message = "No tiered discount applied."
 
         return discount, message
 
 
 class CouponRedemption(models.Model):
-    """
-    علشان نسجل كل مرة الكوبون اتستخدم
-    """
+
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE,related_name="redemptions")
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     order = models.ForeignKey("orders.Order", on_delete=models.SET_NULL, null=True, blank=True)

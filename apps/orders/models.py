@@ -1,13 +1,12 @@
 import uuid
 
 from django.utils.translation import gettext_lazy as _
-from ..store.models import Product
+from apps.store.models import Product
 from decimal import Decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext as _
 
 
 class OrderStatus(models.TextChoices):
@@ -20,31 +19,25 @@ class OrderStatus(models.TextChoices):
     FAILED = "failed", _("Failed")
 
 class PaymentMethod(models.TextChoices):
-    COD = "cod", _("Cash on Delivery")
-    CREDIT_CARD = "credit_card", _("Credit Card")
-    DEBIT_CARD = "debit_card", _("Debit Card")
-    PAYPAL = "paypal", _("PayPal")
+    VISA = "visa", _("Visa")
+    MASTERCARD = "mastercard", _("MasterCard")
+    AMEX = "amex", _("American Express")
+    MEEZA = "meeza", _("Meeza")
+
     APPLE_PAY = "apple_pay", _("Apple Pay")
     GOOGLE_PAY = "google_pay", _("Google Pay")
-    BANK_TRANSFER = "bank_transfer", _("Bank Transfer")
-    STRIPE = "stripe", _("Stripe")
-    AMAZON_PAY = "amazon_pay", _("Amazon Pay")
-    KLARNA = "klarna", _("Klarna")
-    AFTERPAY = "afterpay", _("Afterpay")
-    BITCOIN = "bitcoin", _("Bitcoin")
-    OTHER_CRYPTO = "other_crypto", _("Other Cryptocurrency")
-    ALIPAY = "alipay", _("Alipay")
-    WECHAT_PAY = "wechat_pay", _("WeChat Pay")
-    VENMO = "venmo", _("Venmo")
-    SQUARE = "square", _("Square")
-    PAYONEER = "payoneer", _("Payoneer")
-    SHOP_PAY = "shop_pay", _("Shop Pay")
-    IDEAL = "ideal", _("iDEAL")
-    SOFORT = "sofort", _("Sofort")
-    GIROPAY = "giropay", _("Giropay")
-    BOLETO = "boleto", _("Boleto")
-    PIX = "pix", _("Pix")
-    
+    PAYPAL = "paypal", _("PayPal")
+
+    CASH_ON_DELIVERY = "cod", _("Cash on Delivery")
+
+    INSTALLMENTS = "installments", _("Installments")
+    BNPL_VALU = "bnpl_valu", _("Buy Now Pay Later (valU)")
+    BNPL_TABBY = "bnpl_tabby", _("Buy Now Pay Later (Tabby)")
+
+    # بوابات الدفع
+    # NOON_PAY = "noon_pay", _("Noon Pay")
+    # AMAZON_PAY = "amazon_pay", _("Amazon Pay")
+
 class ShippingClass(models.TextChoices):
     STANDARD = "standard", _("Standard Shipping")
     PICKUP = "pickup", _("In-store Pickup")
@@ -91,22 +84,23 @@ class Order(models.Model):
             self.status_changed_at = timezone.now()
             self.save()
 
-    # def calculate_weight_cost(self):
-    #     total_quantity = sum(item.quantity for item in self.get_items())-3
-
-    #     if total_quantity > 0:
-    #         return Decimal(total_quantity) * 10
-    #     return Decimal("0.00")
-
+    def calculate_shipping(self):
+        total_shipping = sum(item.shipping_cost for item in self.items.all())
+        self.shipping_cost = total_shipping
+        if self.shipping_method == ShippingClass.EXPRESS:
+            self.shipping_cost += Decimal('20.00')
+        elif self.shipping_method == ShippingClass.STANDARD:
+            self.shipping_cost += Decimal('0.00')
+        elif self.shipping_method == ShippingClass.PICKUP:
+            self.shipping_cost += Decimal('0.00')
+        
+        self.save()
 
     def clean(self):
         if self.total_price < 0 or self.shipping_cost < 0:
             raise ValidationError(_("Prices must be non-negative."))
 
     def save(self, *args, **kwargs):
-        if self.weight_cost == 0 :
-            pass
-            # self.weight_cost = self.calculate_weight_cost()
         super().save(*args, **kwargs)
 
 class OrderItem(models.Model):
@@ -115,6 +109,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"))
     discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Discount"))
+    shipping_cost = models.DecimalField(max_digits=6, decimal_places=2, default=0) 
 
     class Meta:
         verbose_name = _("Order Item")
@@ -122,15 +117,16 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} in Order {self.order.id}"
-    # @property
-    # def price_after_discount(self):
-    #     price = self.price if self.price is not None else Decimal("0.00")
-    #     discount = self.discount if self.discount is not None else Decimal("0.00")
-    #     return (price - discount).quantize(Decimal('0.01'))
 
-    
+    def calculate_shipping_cost(self):
 
-    # @property
-    # def total_item_price_after_discount(self):
-        
-    #     return (self.price_after_discount * self.quantity).quantize(Decimal('0.01'))
+        if self.product.free_shipping:
+            self.shipping_cost = 0
+
+        elif self.product.shipping_cost is not None:
+            self.shipping_cost = (self.product.shipping_cost + self.product.price_per_kilogram) * self.quantity
+
+
+    def save(self, *args, **kwargs):
+        self.calculate_shipping_cost()
+        super().save(*args, **kwargs)

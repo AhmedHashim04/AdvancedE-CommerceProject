@@ -2,8 +2,9 @@ from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
-from ..promotions.models import Promotion, FlashSale
+from apps.promotions.models import Promotion, FlashSale
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 from decimal import Decimal, ROUND_HALF_UP
@@ -75,6 +76,13 @@ class ProductImage(models.Model):
 # -------------------------------------
 # Main Product Model
 # -------------------------------------
+class Currency(models.TextChoices):
+    EGP = "EGP", _("Egyptian Pound")
+    USD = "USD", _("US Dollar")
+    EUR = "EUR", _("Euro")
+    GBP = "GBP", _("British Pound")
+    JPY = "JPY", _("Japanese Yen")
+    AUD = "AUD", _("Australian Dollar")
 
     # owner =
 class Product(models.Model):
@@ -91,8 +99,10 @@ class Product(models.Model):
     price = models.DecimalField(default=0, max_digits=10, decimal_places=2,editable=False)
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    currency = models.CharField(max_length=3, default="EGP")
+    currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.EGP)
     tax_rate = models.DecimalField(default=0, max_digits=5, decimal_places=2, blank=True, null=True)
+    shipping_cost = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    free_shipping = models.BooleanField(default=False)
 
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
@@ -105,6 +115,8 @@ class Product(models.Model):
     view_360_url = models.URLField(blank=True, null=True)
 
     weight = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    price_per_kilogram = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
     width = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     height = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
@@ -134,31 +146,6 @@ class Product(models.Model):
         self.is_in_stock = self.stock_quantity > 0
 
         super().save(*args, **kwargs)
-
-    # def get_discounted_price(self, quantity=1):
-    #     base_price = Decimal(self.price)
-
-    #     # Flash Sale
-    #     if self.flash_sale and self.flash_sale.is_ongoing():
-    #         return (base_price * (Decimal(1) - Decimal(self.flash_sale.discount_percentage) / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-    #     # Tiered & Promotions
-    #     now = timezone.now()
-    #     promotions = Promotion.objects.filter(
-    #         Q(products=self) | Q(categories=self.category) | Q(apply_to='all'),
-    #         start_date__lte=now,
-    #         end_date__gte=now,
-    #         is_active=True
-    #     ).exclude(excluded_products=self)
-
-    #     for promo in promotions:
-    #         if promo.discount_type == 'percentage' and promo.value:
-    #             return (base_price * (Decimal(1) - promo.value / Decimal(100))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    #         elif promo.discount_type == 'fixed' and promo.value:
-    #             return max(base_price - promo.value, Decimal("0.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-    #     return base_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
 
     def get_seo_title(self):
         """إرجاع عنوان مناسب للـ SEO"""
