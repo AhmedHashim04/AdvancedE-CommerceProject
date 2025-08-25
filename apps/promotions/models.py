@@ -4,36 +4,32 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from apps.sellers.models import Seller
 
 class Promotion(models.Model):
-    DISCOUNT_TYPE_CHOICES = [
-        ('percentage', 'Percentage'),
-        ('fixed', 'Fixed Amount'),
-        ('free_shipping', 'Free Shipping'),
-        ('bogo', 'Buy One Get One Free'),
-        ('bxgy', 'Buy X Get Y Free'),
-
-        # ('bxgy_discount', 'Buy X Get Y at Discount'),
-
-        # ('gift', 'Gift with Purchase'),
-        # ('bundle', 'Bundle Discount'),
-        # ('tiered', 'Tiered Discount'),
+    class DiscountType(models.TextChoices):
+        PERCENTAGE = "percentage", _("Percentage")
+        FIXED_AMOUNT = "fixed", _("Fixed Amount")
+        FREE_SHIPPING = "shipping", _("Free Shipping")
 
 
-    ]
+        # Bundle = 'bundle', _('Bundle Discount'),
+        # BXGY = "bogo", _("Buy X Get Y Free")
+        # BXGY_Discount = "bogo", _("Buy X Get Y at Discount")
+        # GIFT = "gift", _("Gift with Purchase")
+        # TIERED = "tiered", _("Tiered Discount")
 
-    APPLY_TO_CHOICES = [
-        ('products', 'Specific Products'),
-        ('categories', 'Specific Categories'),
-        ('brands', 'Specific Brands'),
-        ('tags', 'Specific Tags'),
-        ('all', 'All Products'),
-    ]
-
+    class ApplyToChoices(models.TextChoices):
+        PRODUCTS = 'products', 'Specific Products'
+        CATEGORIES = 'categories', 'Specific Categories'
+        BRANDS = 'brands', 'Specific Brands'
+        TAGS = 'tags', 'Specific Tags'
+        ALL = 'all', 'All My Products'
+    
+    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="promotions")
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True)
-    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES) #percentage fixed
-
+    discount_type = models.CharField(max_length=20, choices=DiscountType)
     value = models.DecimalField( #for bxgy_discount , MaxValueValidator(100)]
         max_digits=10, decimal_places=2,
         validators=[MinValueValidator(0)],
@@ -64,7 +60,7 @@ class Promotion(models.Model):
 
 
     # نطاق التطبيق
-    apply_to = models.CharField(max_length=20, choices=APPLY_TO_CHOICES, default='products')
+    apply_to = models.CharField(max_length=20, choices=ApplyToChoices.choices, default='products')
     products = models.ManyToManyField('store.Product', blank=True)
     categories = models.ManyToManyField('store.Category', blank=True)
     brands = models.ManyToManyField('store.Brand', blank=True)

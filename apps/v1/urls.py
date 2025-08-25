@@ -122,7 +122,6 @@ urlpatterns += [
     path("", include(router.urls)),
 ]
 
-# Make Sellers System
 # make shipping system
 # add payments system
 # make address create/destroy/edit 

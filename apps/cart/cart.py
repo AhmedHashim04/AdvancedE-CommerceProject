@@ -43,7 +43,6 @@ class Cart:
         slug = str(product.slug)
         price = Decimal(product.compare_at_price)
         discount = Decimal(product.compare_at_price - product.price)
-        # shipping_cost = lambda quantity: Decimal(product.shipping_cost + ((product.price_per_kilogram * product.weight * quantity) if product.price_per_kilogram else 0))
         final_price = Decimal(product.price) if product.price > 0 else Decimal(product.compare_at_price)
 
         item = self.cart.get(slug)
@@ -54,7 +53,6 @@ class Cart:
                 "price" : str(price),
                 "tax_rate" : str(product.tax_rate),
                 "discount" : str(discount),
-                # "shipping_cost" : str(shipping_cost(quantity)),
                 "price_after_discount" : str(final_price),
                 "added_at" : now().isoformat(),
                 "subtotal" : "0",
@@ -97,7 +95,6 @@ class Cart:
                 "price" : Decimal(item["price"]),
                 "discount" : discount_amount,
                 "price_after_discount" : Decimal(item["price_after_discount"]),
-                # "shipping_cost" : Decimal(item["shipping_cost"]),
                 "added_at" : item.get("added_at"),
                 "subtotal" : Decimal(item["subtotal"]),
 
@@ -200,3 +197,5 @@ class Cart:
             "coupon_discount": coupon_discount,
             "total_price_after_discount": final_total,
         }
+
+

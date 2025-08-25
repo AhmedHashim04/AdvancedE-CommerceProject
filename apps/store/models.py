@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
-from apps.sellers.models import Seller
+from apps.sellers.models import Seller, ShippingSystem
 from apps.promotions.models import Promotion, FlashSale
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -109,8 +109,7 @@ class Product(SEOFieldsMixin, models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.EGP)
     tax_rate = models.DecimalField(default=0, max_digits=5, decimal_places=2, blank=True, null=True)
-    shipping_cost = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    free_shipping = models.BooleanField(default=False)
+    shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.SET_NULL, null=True, related_name="product")
 
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
@@ -123,8 +122,6 @@ class Product(SEOFieldsMixin, models.Model):
     view_360_url = models.URLField(blank=True, null=True)
 
     weight = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    price_per_kilogram = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-
     width = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     height = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     depth = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)

@@ -107,3 +107,4 @@ class PayoutViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return Payout.objects.filter(seller__user=self.request.user)
+

@@ -11,8 +11,8 @@ from rest_framework.generics import GenericAPIView, CreateAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
-from rest_framework import viewsets, status
 from rest_framework.views import APIView
+from rest_framework import viewsets, status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, LoginSerializer, AddressSerializer
@@ -346,7 +346,6 @@ class PasswordChangeView(GenericAPIView):
         logout(request)
 
         return Response({'detail': _('New password has been saved. Please login again.')}, status=status.HTTP_200_OK)
-
 
 
 class AddressViewSet(viewsets.ModelViewSet):

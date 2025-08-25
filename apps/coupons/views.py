@@ -43,3 +43,4 @@ def remove_coupon(request):
         del request.session['applied_coupon_id']
         return Response({"success": True, "message": "Coupon removed."})
     return Response({"success": False, "message": "No coupon to remove."}, status=status.HTTP_400_BAD_REQUEST)
+

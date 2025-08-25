@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
+from apps.sellers.models import Seller
 
 User = get_user_model()
 
@@ -14,12 +15,17 @@ class Coupon(models.Model):
         PERCENTAGE = "percentage", _("Percentage")
         FIXED_AMOUNT = "fixed", _("Fixed Amount")
         FREE_SHIPPING = "shipping", _("Free Shipping")
-        BOGO = "bogo", _("Buy One Get One")
-        GIFT = "gift", _("Gift Voucher")
-        TIERED = "tiered", _("Tiered Discount")
+
+        # Bundle = 'bundle', _('Bundle Discount'),
+        # BXGY = "bogo", _("Buy X Get Y Free")
+        # BXGY_Discount = "bogo", _("Buy X Get Y at Discount")
+        # GIFT = "gift", _("Gift with Purchase")
+        # TIERED = "tiered", _("Tiered Discount")
 
     code = models.CharField(max_length=50, unique=True, db_index=True, help_text=_("Coupon code used by customers"))
     description = models.TextField(blank=True, null=True)
+
+    seller = models.OneToOneField(Seller, on_delete=models.CASCADE, related_name="coupon")
 
     discount_type = models.CharField(max_length=20, choices=DiscountType.choices, default=DiscountType.PERCENTAGE)
     value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)],
@@ -134,3 +140,20 @@ class CouponRedemption(models.Model):
 
     def __str__(self):
         return f"{self.coupon.code} used by {self.user}"
+
+
+# Full Scenarios for Discount Types:
+    # seller will add promotion to his product 
+    # promotion is applied on product
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
