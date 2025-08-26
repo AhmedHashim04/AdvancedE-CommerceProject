@@ -78,6 +78,4 @@ def update_products(sender, instance, **kwargs):
                     product.free_shipping = True
                     product.save()
 
-    # elif instance.discount_type == 'bogo': #دي فال order
-    # elif instance.discount_type == 'bxgy': #دي فال order
     

@@ -70,7 +70,7 @@ class ShippingSystem(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="shipping_systems")
     name = models.CharField(max_length=100, help_text=_("Shipping system name"))
     description = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
+    
     base_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text=_("Base shipping fee"))
     per_kg_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text=_("Fee per KG"))
     free_shipping_over = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text=_("Free shipping for orders over this amount"))
@@ -88,6 +88,8 @@ class ShippingSystem(models.Model):
     active_until = models.DateField(blank=True, null=True, help_text=_("Shipping system active until date"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         verbose_name = _("Shipping System")
         verbose_name_plural = _("Shipping Systems")

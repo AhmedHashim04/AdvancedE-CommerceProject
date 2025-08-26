@@ -17,11 +17,10 @@ class Coupon(models.Model):
         FREE_SHIPPING = "shipping", _("Free Shipping")
 
         # Bundle = 'bundle', _('Bundle Discount'),
-        # BXGY = "bogo", _("Buy X Get Y Free")
-        # BXGY_Discount = "bogo", _("Buy X Get Y at Discount")
+        # BXGY = "bxgy", _("Buy X Get Y Free")
+        # BXGY_Discount = "bxgy_discount", _("Buy X Get Y at Discount")
         # GIFT = "gift", _("Gift with Purchase")
         # TIERED = "tiered", _("Tiered Discount")
-
     code = models.CharField(max_length=50, unique=True, db_index=True, help_text=_("Coupon code used by customers"))
     description = models.TextField(blank=True, null=True)
 
@@ -39,9 +38,6 @@ class Coupon(models.Model):
 
     minimum_order_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
-    applicable_categories = models.ManyToManyField("store.Category", blank=True, related_name="coupons")
-    applicable_products = models.ManyToManyField("store.Product", blank=True, related_name="coupons")
-    applicable_brands = models.ManyToManyField("store.Brand", blank=True, related_name="coupons")
 
     allowed_users = models.ManyToManyField(User, blank=True, related_name="coupons")
     gift_balance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -74,62 +70,6 @@ class Coupon(models.Model):
         if self.minimum_order_amount and cart_total is not None and cart_total < self.minimum_order_amount:
             return False, f"Order total must be at least {self.minimum_order_amount} to use this coupon."
         return True, None
-
-    # ------------------- Discount Logic -------------------
-    def apply_discount(self, cart):
-        discount = Decimal("0.00")
-        message = "Coupon applied."
-        
-        if self.discount_type == self.DiscountType.PERCENTAGE:
-            for item in cart:
-                if self.applicable_products.exists() and item.product not in self.applicable_products.all():
-                    continue
-                if self.applicable_categories.exists() and item.product.category not in self.applicable_categories.all():
-                    continue
-                if self.applicable_brands.exists() and item.product.brand not in self.applicable_brands.all():
-                    continue
-
-                item_discount = (item['price_after_discount'] * self.value / Decimal("100"))
-                discount += item_discount * item['quantity']
-            message = f"Total price will be discounted by {self.value} %"
-
-        elif self.discount_type == self.DiscountType.FIXED_AMOUNT:
-            discount = Decimal(self.value)
-            message = f"Total price will be discounted by {self.value}"
-
-        # elif self.discount_type == self.DiscountType.FREE_SHIPPING:
-        #     discount = Decimal("0.00")
-        #     message = "Free shipping will be applied to your order."
-
-        # elif self.discount_type == self.DiscountType.BOGO:
-        #     for item in cart:
-        #         if self.applicable_products.exists() and item.product not in self.applicable_products.all():
-        #             continue
-        #         free_qty = item.quantity // 2
-        #         discount += free_qty * item.price
-        #     message = "Buy one get one offer applied."
-
-        # elif self.discount_type == self.DiscountType.GIFT:
-        #     discount = Decimal(self.gift_balance or 0)
-        #     message = f"Gift voucher applied: {discount}"
-
-        # elif self.discount_type == self.DiscountType.TIERED:
-        #     tiers = [
-        #         (Decimal("1000.00"), Decimal("20")),  # 20% for >= 1000
-        #         (Decimal("500.00"), Decimal("10")),   # 10% for >= 500
-        #     ]
-        #     applied = False
-        #     for min_amount, percent in tiers:
-        #         if cart_total >= min_amount:
-        #             discount = cart_total * percent / Decimal("100")
-        #             message = f"Tiered discount: {percent}% off for orders above {min_amount}"
-        #             applied = True
-        #             break
-        #     if not applied:
-        #         message = "No tiered discount applied."
-
-        return discount, message
-
 
 class CouponRedemption(models.Model):
 

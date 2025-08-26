@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from apps.store.models import Product, Brand, Category, Tag, ProductImage, ProductColor, ShippingClass
+from apps.store.models import Product, Brand, Category, Tag, ProductImage, ProductColor
 
 # from payment.models import Payment
 
@@ -16,6 +16,5 @@ class Command(BaseCommand):
         Tag.objects.all().delete()
         ProductImage.objects.all().delete()
         ProductColor.objects.all().delete()
-        ShippingClass.objects.all().delete()
 
         print("✅ All product-related data has been deleted.")

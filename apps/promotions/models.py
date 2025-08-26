@@ -13,11 +13,11 @@ class Promotion(models.Model):
         FREE_SHIPPING = "shipping", _("Free Shipping")
 
 
-        # Bundle = 'bundle', _('Bundle Discount'),
-        # BXGY = "bogo", _("Buy X Get Y Free")
-        # BXGY_Discount = "bogo", _("Buy X Get Y at Discount")
+        # BXGY = "bxgy", _("Buy X Get Y Free")
+        # BXGY_Discount = "bxgy_discount", _("Buy X Get Y at Discount")
         # GIFT = "gift", _("Gift with Purchase")
         # TIERED = "tiered", _("Tiered Discount")
+        # Bundle = 'bundle', _('Bundle Discount'),
 
     class ApplyToChoices(models.TextChoices):
         PRODUCTS = 'products', 'Specific Products'
@@ -27,6 +27,7 @@ class Promotion(models.Model):
         ALL = 'all', 'All My Products'
     
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="promotions")
+
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True)
     discount_type = models.CharField(max_length=20, choices=DiscountType)
@@ -36,8 +37,8 @@ class Promotion(models.Model):
         blank=True, null=True
     )
     
-    # معلمات إضافية لأنواع محددة
-    # for bxgy
+
+    # for BXGY = "bxgy", _("Buy X Get Y Free") 
     buy_quantity = models.PositiveIntegerField(blank=True, null=True, help_text="Buy X quantity")
     get_quantity = models.PositiveIntegerField(blank=True, null=True, help_text="Get Y quantity")
 
@@ -59,17 +60,17 @@ class Promotion(models.Model):
     total_uses = models.PositiveIntegerField(default=0)
 
 
-    # نطاق التطبيق
-    apply_to = models.CharField(max_length=20, choices=ApplyToChoices.choices, default='products')
-    products = models.ManyToManyField('store.Product', blank=True)
-    categories = models.ManyToManyField('store.Category', blank=True)
-    brands = models.ManyToManyField('store.Brand', blank=True)
-    tags = models.ManyToManyField('store.Tag', blank=True)
-    excluded_products = models.ManyToManyField( 
-        'store.Product',
-        blank=True,
-        related_name='excluded_promotions'
-    )
+    # # نطاق التطبيق
+    # apply_to = models.CharField(max_length=20, choices=ApplyToChoices.choices, default='products')
+    # products = models.ManyToManyField('store.Product', blank=True, related_name='promotion')
+    # categories = models.ManyToManyField('store.Category', blank=True, related_name='promotion')
+    # brands = models.ManyToManyField('store.Brand', blank=True, related_name='promotion')
+    # tags = models.ManyToManyField('store.Tag', blank=True, related_name='promotion')
+    # excluded_products = models.ManyToManyField( 
+    #     'store.Product',
+    #     blank=True,
+    #     related_name='excluded_promotions'
+    # )
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
     # الفعالية الزمنية
