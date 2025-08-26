@@ -16,11 +16,10 @@ class Coupon(models.Model):
         FIXED_AMOUNT = "fixed", _("Fixed Amount")
         FREE_SHIPPING = "shipping", _("Free Shipping")
 
-        # Bundle = 'bundle', _('Bundle Discount'),
-        # BXGY = "bxgy", _("Buy X Get Y Free")
-        # BXGY_Discount = "bxgy_discount", _("Buy X Get Y at Discount")
-        # GIFT = "gift", _("Gift with Purchase")
-        # TIERED = "tiered", _("Tiered Discount")
+        GIFT = "gift", _("Gift with Purchase")
+        BXGY = "bxgy", _("Buy X Get Y Free (e.g., Buy 5 Get 1 Free)")
+
+
     code = models.CharField(max_length=50, unique=True, db_index=True, help_text=_("Coupon code used by customers"))
     description = models.TextField(blank=True, null=True)
 

@@ -35,7 +35,34 @@ class Cart:
 
         return cart
 
-    def add(self, product: Product, quantity: int = 1):
+    def add(self, product: Product, quantity: int = 1, gift: Product = None, bxgy: Product = None):
+        if gift:
+            slug = str(gift.slug)
+            price = 0
+            discount = 0
+            final_price = 0
+            item = self.cart.get(slug)
+
+            if not item:
+                item = {
+                    "quantity" : 0,
+                    "price" : str(price),
+                    "tax_rate" : str(product.tax_rate),
+                    "discount" : str(discount),
+                    "price_after_discount" : str(final_price),
+                    "added_at" : now().isoformat(),
+                    "subtotal" : "0",
+                }
+
+            item["quantity"] = 0
+            item["subtotal"] = 0
+
+            self.cart[slug] = item
+            self.save()
+            return
+
+        if y:
+            self.cart.get(str(bxgy.slug))['quantity'] += quantity
         if quantity <= 0:
             self.remove(product)
             return

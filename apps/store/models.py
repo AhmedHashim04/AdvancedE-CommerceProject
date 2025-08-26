@@ -107,10 +107,9 @@ class Product(SEOFieldsMixin, models.Model):
 
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products",editable=False)
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
-    coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, related_name="products")
 
     shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.SET_NULL, null=True, related_name="product")
-    
+
     price = models.DecimalField(default=0, max_digits=10, decimal_places=2,editable=False)
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -147,12 +146,86 @@ class Product(SEOFieldsMixin, models.Model):
     is_on_sale = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
-    flash_sale = models.ForeignKey(FlashSale, on_delete=models.SET_NULL, null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)        
+            self.slug = slugify(self.name)  
+        self.apply_promotions()
         super().save(*args, **kwargs)
+
+    @property
+    def is_free_shipping(self):
+        if self.promotion and self.promotion.discount_type == Promotion.DiscountType.FREE_SHIPPING:
+            return True
+        return False
+
+    def apply_promotions(self):
+        """
+        Apply the attached promotion to this product and update the price accordingly.
+        This method should be called before saving or displaying the product price.
+        """
+        # Reset price to compare_at_price if available, else keep current price
+
+        if not self.promotion or not self.promotion.is_active:
+            self.price = self.compare_at_price
+            return
+
+        promo = self.promotion
+        if not promo.validate()[0]:
+            self.price = self.compare_at_price
+            return promo.validate()[1]
+
+        # Percentage Discount
+        if promo.discount_type == Promotion.DiscountType.PERCENTAGE:
+            if promo.value:
+                discount = (self.compare_at_price * promo.value) / 100
+                self.price = max(self.compare_at_price - discount, 0)
+            else:
+                self.price = self.compare_at_price
+
+        # Fixed Amount Discount
+        elif promo.discount_type == Promotion.DiscountType.FIXED_AMOUNT:
+            if promo.value:
+                self.price = max(self.compare_at_price - promo.value, 0)
+            else:
+                self.price = self.compare_at_price
+
+        # Free Shipping (does not affect price, but you may want to set a flag) 
+        elif promo.discount_type == Promotion.DiscountType.FREE_SHIPPING:
+            self.price = self.compare_at_price
+            # it Handeled in cart
+
+        # Buy X Get Y Free (does not affect unit price, but affects cart logic)
+        elif promo.discount_type == Promotion.DiscountType.BXGY:
+            self.price = self.compare_at_price
+            # This should be handled in the cart/order logic, not here
+
+        # Buy X Get Y at Discount
+        elif promo.discount_type == Promotion.DiscountType.BXGY_Discount:
+            self.price = self.compare_at_price
+            # This should be handled in the cart/order logic, not here
+
+        # Gift with Purchase
+        elif promo.discount_type == Promotion.DiscountType.GIFT:
+            self.price = self.compare_at_price
+            # You may want to add a field to Product: gift_product = models.ForeignKey('self', ...)
+            # This should be handled in the cart/order logic
+
+        # Tiered Discount (needs more info, e.g. tiers)
+        elif promo.discount_type == Promotion.DiscountType.TIERED:
+            self.price = self.compare_at_price
+            # You need to add a model for tiered discounts and logic here
+
+        # Bundle Discount (needs more info)
+        elif promo.discount_type == Promotion.DiscountType.Bundle:
+            self.price = self.compare_at_price
+            # You need to add a model for bundles and logic here
+
+        else:
+            self.price = self.compare_at_price
+
+        # If you want to track if a promotion was applied, add a boolean field: is_promotion_applied
+
 
     def get_seo_title(self):
         return self.meta_title if self.meta_title else self.name

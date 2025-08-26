@@ -12,12 +12,8 @@ class Promotion(models.Model):
         FIXED_AMOUNT = "fixed", _("Fixed Amount")
         FREE_SHIPPING = "shipping", _("Free Shipping")
 
-
-        # BXGY = "bxgy", _("Buy X Get Y Free")
-        # BXGY_Discount = "bxgy_discount", _("Buy X Get Y at Discount")
-        # GIFT = "gift", _("Gift with Purchase")
-        # TIERED = "tiered", _("Tiered Discount")
-        # Bundle = 'bundle', _('Bundle Discount'),
+        GIFT = "gift", _("Gift with Purchase")
+        BXGY = "bxgy", _("Buy X Get Y Free (e.g., Buy 5 Get 1 Free)")
 
     class ApplyToChoices(models.TextChoices):
         PRODUCTS = 'products', 'Specific Products'
@@ -59,18 +55,6 @@ class Promotion(models.Model):
     max_usage = models.PositiveIntegerField(blank=True, null=True)
     total_uses = models.PositiveIntegerField(default=0)
 
-
-    # # نطاق التطبيق
-    # apply_to = models.CharField(max_length=20, choices=ApplyToChoices.choices, default='products')
-    # products = models.ManyToManyField('store.Product', blank=True, related_name='promotion')
-    # categories = models.ManyToManyField('store.Category', blank=True, related_name='promotion')
-    # brands = models.ManyToManyField('store.Brand', blank=True, related_name='promotion')
-    # tags = models.ManyToManyField('store.Tag', blank=True, related_name='promotion')
-    # excluded_products = models.ManyToManyField( 
-    #     'store.Product',
-    #     blank=True,
-    #     related_name='excluded_promotions'
-    # )
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
     # الفعالية الزمنية
@@ -102,22 +86,26 @@ class Promotion(models.Model):
 
         if self.discount_type in ('bxgy', 'bxgy_discount') and not (self.buy_quantity and self.get_quantity):
             raise ValidationError("Buy X Get Y requires both buy and get quantities")
-
+    
+    def validate(self):
+        now = timezone.now()
+        if self.start_date and self.start_date > now:
+            self.price = self.compare_at_price
+            return False, "Promotion has not started yet."
+        if self.end_date and self.end_date < now:
+            self.price = self.compare_at_price
+            return False, "Promotion has expired."
+        if not self.is_active:
+            self.price = self.compare_at_price
+            return False, "Promotion is not active."
+        if self.max_usage and self.total_uses >= self.max_usage:
+            self.price = self.compare_at_price
+            return False, "Promotion usage limit reached."
+        return True
 
     def __str__(self):
         return self.name
 
-class FlashSale(models.Model):
-    name = models.CharField(max_length=255)
-    products = models.ManyToManyField('store.Product')
-    discount_percentage = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(100)]
-    )
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    max_quantity = models.PositiveIntegerField(blank=True, null=True)
-    purchases_count = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
 
     def is_ongoing(self):
         now = timezone.now()
