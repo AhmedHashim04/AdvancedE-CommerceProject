@@ -83,7 +83,6 @@ class Currency(models.TextChoices):
     JPY = "JPY", _("Japanese Yen")
     AUD = "AUD", _("Australian Dollar")
 
-
 class SEOFieldsMixin(models.Model):
     meta_title = models.CharField(max_length=255, blank=True)
     meta_description = models.TextField(blank=True)
@@ -106,10 +105,11 @@ class Product(SEOFieldsMixin, models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products",editable=False)
     shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.SET_NULL, null=True, related_name="product")
 
-    price = models.DecimalField(default=0, max_digits=10, decimal_places=2,editable=False)
+    promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
+    base_price = models.DecimalField(default=0, max_digits=10, decimal_places=2,editable=False)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.EGP)
-    tax_rate = models.DecimalField(default=0, max_digits=5, decimal_places=2, blank=True, null=True)
+    # tax_rate = models.DecimalField(default=0, max_digits=5, decimal_places=2, blank=True, null=True)
 
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
@@ -145,7 +145,6 @@ class Product(SEOFieldsMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)  
-        self.apply_promotions()
         super().save(*args, **kwargs)
 
     def get_seo_title(self):
@@ -166,3 +165,12 @@ class Product(SEOFieldsMixin, models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def final_price(self):
+        price = self.base_price
+
+        if not self.promotion.is_valid:
+            return price 
+        
+        if self.promotion.percentage_amount or self.promotion.fixed_amount:
+            return self.promotion.handle_amount_discount(price)
