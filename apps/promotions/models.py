@@ -55,7 +55,7 @@ class Promotion(models.Model):
     percentage_amount = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     fixed_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
-    bogo = models.OneToOneField(BQGPromotion, on_delete=models.CASCADE, null=True, blank=True, related_name="promotion")
+    bqg = models.OneToOneField(BQGPromotion, on_delete=models.CASCADE, null=True, blank=True, related_name="promotion")
 
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField()
@@ -75,3 +75,6 @@ class Promotion(models.Model):
             price -= self.fixed_amount
 
         return max(price, 0)
+    
+    def getPromotion(self):
+        return self.bqg
