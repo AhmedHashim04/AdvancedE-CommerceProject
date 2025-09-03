@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
-from allauth.account import app_settings as allauth_account_settings
+
+from .models import Address
+
 from allauth.account.adapter import get_adapter
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
@@ -143,8 +145,6 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
-from rest_framework import serializers
-from .models import Address
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:

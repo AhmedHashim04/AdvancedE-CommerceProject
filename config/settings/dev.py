@@ -14,7 +14,7 @@ DATABASES = {
 
 # ----------- HOSTS & CORS -----------
 
-ALLOWED_HOSTS = [config('HOST'),'127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 # ----------- CACHE -----------
 

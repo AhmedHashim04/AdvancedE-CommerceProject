@@ -5,7 +5,6 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import login as django_login, get_user_model, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
-from django.core.mail import send_mail
 
 from rest_framework.generics import GenericAPIView, CreateAPIView
 from rest_framework.response import Response

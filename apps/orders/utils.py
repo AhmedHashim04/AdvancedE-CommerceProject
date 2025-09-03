@@ -21,10 +21,9 @@ def generate_invoice_pdf(request, order, lang_code='en'):
 
     translation.deactivate()
 
-    # تحديد مسار الخط لو موجود داخل static
+
     cairo_font_path = os.path.join(settings.BASE_DIR, 'static/fonts/Cairo-Regular.ttf')
 
-    # تحميل الـ CSS مع الخط يدويًا لتأكيد دعمه
     css = CSS(string=f"""
         @font-face {{
             font-family: 'Cairo';
