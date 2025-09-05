@@ -1,7 +1,10 @@
+from celery import uuid
 from django.utils import timezone
 from django.db import models
 from core.utils import MAX_INT
 from apps.store.models import Product
+from uuid import uuid4
+from decimal import Decimal
 
 class PromotionType(models.TextChoices):
     # NEW_CUSTOMER = 'new_customer', 'New Customer Discount'
@@ -22,40 +25,73 @@ class PromotionType(models.TextChoices):
 
     FREE_SHIPPING = 'free_shipping', 'Free Shipping'
 
-class BQGPromotion(models.Model): # handeled in cart
-    quantity_to_buy = models.PositiveIntegerField(help_text="quantity to buy")
-    gift = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="bqg_promotions")
-    gift_quantity = models.PositiveIntegerField(help_text="quantity to get")
+class BQGPromotion(models.Model):  # handled in cart
+    quantity_to_buy = models.PositiveIntegerField(help_text="Quantity required to activate promotion")
+    gift = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="bqg_promotions"
+    )
+    gift_quantity = models.PositiveIntegerField(help_text="Quantity of free gift")
 
-    percentage_amount = models.DecimalField(help_text="precentage discount in new quantity only",
-                            max_digits=5, decimal_places=2, null=True, blank=True, default=100)
+    percentage_amount = models.DecimalField(
+        help_text="Percentage discount on gift (0-100)",
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    fixed_amount = models.DecimalField(
+        help_text="Fixed discount amount applied to total gift price",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
 
-    fixed_amount = models.DecimalField(help_text="fixed discount in new quantity only",
-                            max_digits=10, decimal_places=2, null=True, blank=True)
-
-
-    def handle_bqg(self,product,cart):
-        if product.quantity < self.quantity_to_buy:
-            return
+    def is_valid(self, bought_qty: int) -> bool:
+        """Check if promotion is applicable based on purchased quantity and stock."""
+        if bought_qty < self.quantity_to_buy:
+            return False
 
         if self.gift.stock_quantity < self.gift_quantity:
-            self.gift.promotion = None
-            return
+            return False
+
+        return True
+
+    @property
+    def base_gift_price(self) -> Decimal:
+        """Price of gift items before applying discounts."""
+        return Decimal(self.gift.final_price) * self.gift_quantity
+
+    @property
+    def discounted_gift_price(self) -> Decimal:
+        """Final price of gift items after applying promotion discounts."""
+        price = self.base_gift_price
 
         if self.percentage_amount:
-            discount = self.gift.base_price * (self.percentage_amount / 100)
+            price -= price * (Decimal(self.percentage_amount) / 100)
 
         if self.fixed_amount:
-            discount += self.fixed_amount
+            price -= Decimal(self.fixed_amount)
 
-        cart.add(self.gift, self.gift_quantity, discount=discount)
+        return max(price, Decimal("0"))
+
+    @property
+    def discounted_gift_price_with_tax(self) -> Decimal:
+        """Gift price after discount + tax."""
+        price = self.discounted_gift_price
+        tax_rate = Decimal(self.gift.tax_rate or 0)
+        return price + (price * tax_rate / 100)
 
 
 class Promotion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     percentage_amount = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     fixed_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
-    bqg = models.OneToOneField(BQGPromotion, on_delete=models.CASCADE, null=True, blank=True, related_name="promotion")
+
+    bqg = models.OneToOneField(
+        "BQGPromotion", on_delete=models.CASCADE,
+        null=True, blank=True, related_name="promotion"
+    )
 
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField()
@@ -64,17 +100,30 @@ class Promotion(models.Model):
     usage_count = models.PositiveIntegerField(default=0)
 
     @property
-    def is_valid(self):
-        return self.is_active and self.start_date <= timezone.now() <= self.end_date and self.usage_count < self.usage_limit
+    def is_valid(self) -> bool:
+        """Check if promotion is active, within date range, and under usage limit."""
+        return (
+            self.is_active
+            and self.start_date <= timezone.now() <= self.end_date
+            and self.usage_count < self.usage_limit
+        )
 
-    def handle_amount_discount(self, price):
+    def handle_amount_discount(self, price: Decimal) -> Decimal:
+        """Apply percentage or fixed discount to a price."""
         if self.percentage_amount:
-            price -= price * (self.percentage_amount / 100)
+            price -= price * (Decimal(self.percentage_amount) / 100)
 
         if self.fixed_amount:
-            price -= self.fixed_amount
+            price -= Decimal(self.fixed_amount)
 
-        return max(price, 0)
-    
-    def getPromotion(self):
-        return self.bqg
+        return max(price, Decimal("0"))
+
+    def get_promotion(self):
+        """
+        Return the underlying promotion object (e.g., BQGPromotion).
+        If no subtype exists, return None.
+        """
+        if self.bqg:
+            return self.bqg
+        # ممكن هنا تضيف أنواع تانية مستقبلاً
+        return None
