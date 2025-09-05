@@ -5,13 +5,13 @@ class ProductFilter(django_filters.FilterSet):
     template = None  # يمنع محاولة تحميل أي template
     ordering = django_filters.OrderingFilter(
         fields=(
-            ('price', 'price'),
+            ('base_price', 'base_price'),
             ('created_at', 'created_at'),
             ('name', 'name'),
         ),
 
         field_labels={
-            'price': 'Price',
+            'base_price': 'base_price',
             'created_at': 'Created Date',
             'name': 'Product Name',
         }
@@ -20,7 +20,7 @@ class ProductFilter(django_filters.FilterSet):
     class Meta:
         model = Product
         fields = {
-            'price': ['exact', 'gte', 'lte'],
+            'base_price': ['exact', 'gte', 'lte'],
             'is_active': ['exact'],
             'created_at': ['gte', 'lte'],
             'name': ['icontains'],

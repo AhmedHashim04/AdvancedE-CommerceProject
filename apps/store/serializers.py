@@ -36,10 +36,13 @@ class ProductSerializer(DynamicFieldsProductSerializer):
     color_options = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
-
+    promotion = serializers.SerializerMethodField()
     class Meta:
         model = Product
         fields = "__all__"
+
+    def get_promotion(self, obj):
+        return str(obj.promotion) if obj.promotion else None
 
     def get_tags(self, obj):
         return [tag.name for tag in obj.tags.all()]
@@ -48,7 +51,7 @@ class ProductSerializer(DynamicFieldsProductSerializer):
         return [color.name for color in obj.color_options.all()]
 
     def get_gallery(self, obj):
-        return [photo.image.url for photo in obj.gallery.all()]
+        return None#[photo.image.url for photo in obj.gallery.all()]
 
     def get_reviews(self, obj):
         return [(review.user.email if review.user else review.ip_address, review.rating, review.feedback) for review in obj.reviews.all()]

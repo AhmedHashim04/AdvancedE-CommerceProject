@@ -32,24 +32,22 @@ class ShoppingCart:
         self.session["cart"] = self.cart
         self.session.modified = True
 
-    def disactive_promotion(self, item):
-        item["promotion"] = None
-        item["subtotal"] = str(
-            (Decimal(item["price"]) + Decimal(item["price"]) * Decimal(item["tax_rate"]) / 100) 
-            * item["quantity"]
-        )
-        self.save()
-
-    def active_promotion(self, item, promotion: Promotion):
-        item["promotion"] = str(promotion.id)
-        item["subtotal"] = self.get_subtotal(item, promotion)
-        self.save()
-
     def get_promo(self, product, quantity):
         promo = product.promotion.get_promotion()
         if promo and promo.is_valid(quantity):
             return promo
         return None
+
+    def disactive_promotion(self, item, promotion: Promotion):
+        item["promotion"] = None
+        item["subtotal"] = self.get_subtotal(item, promotion)
+        self.save()
+
+    def active_promotion(self, item, promotion: Promotion):
+        if promotion.is_valid():
+            item["promotion"] = promotion
+        item["subtotal"] = self.get_subtotal(item)
+        self.save()
 
     def update(self, product, item, quantity):
         current_qty = item["quantity"]
@@ -63,17 +61,6 @@ class ShoppingCart:
             if promo:
                 self.active_promotion(item, promo)
         self.save()
-
-    def get_subtotal(self, item, promotion=None):
-        base_price = Decimal(item["price"]) * item["quantity"] 
-
-        if promotion:
-            discounted_price = promotion.handle_amount_discount(base_price)
-        else:
-            discounted_price = base_price
-
-        total_with_tax = discounted_price + discounted_price * Decimal(item["tax_rate"]) / 100
-        return str(total_with_tax)
 
     def add(self, product, quantity: int = 1) -> None:
         if not product.pk:
@@ -91,14 +78,35 @@ class ShoppingCart:
             self.update(product, item, quantity)
         else:
             self.cart[slug] = {
-                "quantity": min(quantity, product.stock),
                 "price": str(Decimal(product.final_price)),
+                "quantity": min(quantity, product.stock),
                 "tax_rate": str(Decimal(product.tax_rate)),
-                "promotion": str(promo.id) if promo else None,
+                "promotion": str(promo) if promo else None,
                 "added_at": timezone.now().isoformat(),
-                "subtotal": self.get_subtotal({"price": product.final_price, "quantity": quantity, "tax_rate": product.tax_rate}, promo),
             }
+            cart_item = self.cart[slug]
+            self.cart[slug].update({"subtotal": self.get_subtotal(cart_item)})
+
         self.save()
+
+    def get_subtotal(self, item):
+        base_price = Decimal(item["price"]) * item["quantity"] 
+
+        if item["promotion"] :
+            discounted_price = item["promotion"].handle_amount_discount(base_price)
+        else:
+            discounted_price = base_price
+
+        total_with_tax = discounted_price + discounted_price * Decimal(item["tax_rate"]) / 100
+        return str(total_with_tax)
+
+    def get_cart_summary(self):
+        total_items = sum(item["quantity"] for item in self.cart.values())
+        total_price = self.get_total_price()
+        return {
+            "total_items": total_items,
+            "total_price": str(total_price),
+        }
 
     def remove(self, product: Product):
         slug = str(product.slug)
@@ -114,14 +122,18 @@ class ShoppingCart:
         self.session.modified = True
 
     def get_total_price(self):
-        pass
-
+        prices = [item["subtotal"] for item in self.cart]
+        return sum(prices)
+    
     def __len__(self):
-        pass
-
+        count = 0
+        for _ in self.cart:
+            count += 1
+        return count
+    
     def __iter__(self):
-        pass
-
+        for item in self.cart.values():
+            yield item
 
     @staticmethod
     def merge_on_login(user, old_session_key) -> int:
@@ -141,15 +153,14 @@ class ShoppingCart:
                 continue
 
             new_quantity = item["quantity"]
-            if product_slug in merged_cart:
-                new_quantity += merged_cart[product_slug]["quantity"]
 
             if new_quantity > product.stock:
                 new_quantity = product.stock
 
+            if product_slug in merged_cart:
+                merged_cart[product_slug]["quantity"] = new_quantity
+
             item_copy = item.copy()
-            item_copy["quantity"] = new_quantity
-            item_copy["subtotal"] = str((Decimal(item_copy["price"]) + Decimal(item_copy["price"]) * Decimal(item_copy["tax_rate"]) / 100) * new_quantity)
             merged_cart[product_slug] = item_copy
             added_count += 1
 

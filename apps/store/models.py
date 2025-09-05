@@ -1,11 +1,11 @@
 from django.db import models
-from django.db.models import Q
+# from django.db.models import Q
 from django.utils.text import slugify
 from apps.sellers.models import Seller, ShippingSystem
 from apps.promotions.models import Promotion#, FlashSale
-from apps.coupons.models import Coupon
+# from apps.coupons.models import Coupon
 
-from django.utils import timezone
+# from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # -------------------------------------
@@ -69,7 +69,7 @@ class ProductImage(models.Model):
     alt_text = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return self.alt_text or self.image.url
+        return "A"
 
 
 # -------------------------------------

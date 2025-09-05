@@ -1,8 +1,9 @@
-from celery import uuid
+# from celery import uuid
+from django.forms import ValidationError
 from django.utils import timezone
 from django.db import models
 from core.utils import MAX_INT
-from apps.store.models import Product
+# from apps.store.models import Product
 from uuid import uuid4
 from decimal import Decimal
 
@@ -28,7 +29,7 @@ class PromotionType(models.TextChoices):
 class BQGPromotion(models.Model):  # handled in cart
     quantity_to_buy = models.PositiveIntegerField(help_text="Quantity required to activate promotion")
     gift = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="bqg_promotions"
+        "store.Product", on_delete=models.CASCADE, related_name="bqg_promotions"
     )
     gift_quantity = models.PositiveIntegerField(help_text="Quantity of free gift")
 
@@ -82,6 +83,8 @@ class BQGPromotion(models.Model):  # handled in cart
         tax_rate = Decimal(self.gift.tax_rate or 0)
         return price + (price * tax_rate / 100)
 
+    def __str__(self):
+        return f"BQGPromotion(gift={self.gift}, quantity_to_buy={self.quantity_to_buy}, gift_quantity={self.gift_quantity})"
 
 class Promotion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -124,6 +127,30 @@ class Promotion(models.Model):
         If no subtype exists, return None.
         """
         if self.bqg:
-            return self.bqg
+            return str(self.bqg)
         # ممكن هنا تضيف أنواع تانية مستقبلاً
         return None
+
+    #make if instance has fixed discount cant have percentage discount and vice versa
+    def clean(self):
+        if self.percentage_amount and self.fixed_amount:
+            raise ValidationError("Cannot have both percentage and fixed amount discounts.")
+
+        if self.percentage_amount < 0:
+            raise ValidationError("Percentage amount must be positive.")
+
+        if self.fixed_amount < 0:
+            raise ValidationError("Fixed amount must be positive.")
+        if self.bqg is None and not (self.percentage_amount or self.fixed_amount):
+            raise ValidationError("Either BQG promotion or a discount amount must be set.")
+        if self.bqg and (self.percentage_amount or self.fixed_amount):
+            raise ValidationError("BQG promotion cannot have additional discount amounts.")
+
+    def __str__(self):
+        if self.bqg:
+            return str(self.bqg)
+
+        if self.percentage_amount:
+            return f"Promotion({self.percentage_amount}% off)"
+        if self.fixed_amount:
+            return f"Promotion(${self.fixed_amount} off)"

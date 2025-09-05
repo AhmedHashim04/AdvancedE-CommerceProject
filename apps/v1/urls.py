@@ -86,11 +86,11 @@ urlpatterns += [
     path("cart/clear/", cart_clear, name="cart-clear"),
 ]
 
-from apps.coupons.views import apply_coupon, remove_coupon
-urlpatterns += [
-    path("coupons/apply/", apply_coupon, name="apply-coupon"),
-    path("coupons/remove/", remove_coupon, name="remove-coupon"),
-]
+# from apps.coupons.views import apply_coupon, remove_coupon
+# urlpatterns += [
+#     path("coupons/apply/", apply_coupon, name="apply-coupon"),
+#     path("coupons/remove/", remove_coupon, name="remove-coupon"),
+# ]
 
 from apps.orders.views import OrderCancelView, OrderCreateView, OrderDetailView, OrderListView
 urlpatterns += [
