@@ -80,7 +80,7 @@ class ShoppingCart:
             self.cart[slug] = {
                 "price": str(Decimal(product.final_price)),
                 "quantity": min(quantity, product.stock),
-                "tax_rate": str(Decimal(product.tax_rate)),
+                # "tax_rate": str(Decimal(product.tax_rate)),
                 "promotion": str(promo) if promo else None,
                 "added_at": timezone.now().isoformat(),
             }

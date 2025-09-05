@@ -35,7 +35,7 @@ class ProductListView(generics.ListAPIView):
         context = super().get_serializer_context()
         context['fields'] = ['name', 'slug',  'short_description',
             'brand', 'category', 'tags',
-            'base_price','promotion',  'currency', 
+            'base_price', 'final_price','promotion',  'currency', 
             'stock_quantity',
             'allow_backorder', 
             'main_image', 'gallery',
@@ -51,7 +51,7 @@ class ProductListView(generics.ListAPIView):
         ).only(
             'name', 'slug',  'short_description',
             'brand', 'category', 'tags',
-            'base_price','promotion',  'currency', 
+            'base_price','promotion','currency', 
             'stock_quantity',
             'allow_backorder', 
             'main_image', 'gallery',
@@ -87,8 +87,8 @@ class ProductDetailView(generics.RetrieveAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['fields'] = [
-            'id', 'name', 'slug', 'description', 'sku','barcode', 
-            'base_price','promotion', 'cost_price', 'currency', 
+            'id', 'name', 'slug', 'description', #'sku','barcode', 
+            'base_price', 'final_price','promotion',  'currency', 
             'category', 'brand',
             'stock_quantity',
             'allow_backorder', 'main_image', 'video_url', 'view_360_url',
@@ -108,8 +108,8 @@ class ProductDetailView(generics.RetrieveAPIView):
             )
             .filter(is_active=True,)
             .only(
-                'id', 'name', 'slug', 'description', 'sku','barcode', 
-                'base_price','promotion', 'cost_price', 'currency', 
+                'id', 'name', 'slug', 'description',# 'sku','barcode', 
+                'base_price','promotion', 'currency', 
                 'category', 'brand',
                 'stock_quantity',
                 'allow_backorder', 'main_image', 'video_url', 'view_360_url',
@@ -146,7 +146,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             .exclude(id=product.id)
             .select_related('category'
                 ).values('id','category__name', 'name', 'slug', 'main_image',
-                "base_price","currency","tax_rate",)
+                "base_price","currency",)
             [:max_related]
         )
 
@@ -159,7 +159,7 @@ class ProductDetailView(generics.RetrieveAPIView):
                 category=product.category,is_active=True,
                 ).exclude(id__in=excluded_ids
                 ).values('id','category__name', 'name', 'slug', 'main_image',
-                "base_price","currency","tax_rate",)[
+                "base_price","currency",)[
                     :max_related - len(related_products)
                 ]
                 related_products += list(additional_products)
@@ -180,7 +180,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             category=product.category,is_active=True,
             slug__in=viewed_slugs
         ).values('id','category__name', 'name', 'slug', 'main_image',
-        "base_price","currency","tax_rate",
+        "base_price","currency",
         ).exclude(slug=product.slug)
 
     def update_recently_viewed(self, product):

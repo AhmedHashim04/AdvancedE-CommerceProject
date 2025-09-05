@@ -37,9 +37,14 @@ class ProductSerializer(DynamicFieldsProductSerializer):
     gallery = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
     promotion = serializers.SerializerMethodField()
+    final_price = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = "__all__"
+    
+    def get_final_price(self, obj):
+        return str(obj.final_price) if obj.final_price else None
 
     def get_promotion(self, obj):
         return str(obj.promotion) if obj.promotion else None
