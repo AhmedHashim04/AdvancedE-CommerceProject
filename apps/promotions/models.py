@@ -80,8 +80,22 @@ class BQGPromotion(models.Model):  # handled in cart
     def discounted_gift_price_with_tax(self) -> Decimal:
         """Gift price after discount + tax."""
         price = self.discounted_gift_price
-        tax_rate = Decimal(self.gift.tax_rate or 0)
-        return price + (price * tax_rate / 100)
+        # tax_rate = Decimal(self.gift.tax_rate or 0)
+        return price #+ (price * tax_rate / 100)
+
+    @property
+    def total_gift_price(self) -> Decimal:
+        """Total price of all gift items after applying discounts and tax."""
+        return self.discounted_gift_price_with_tax * self.gift_quantity
+
+    def bqq_summary(self):
+        """Return a summary of the BQG promotion."""
+        return {
+            "gift": str(self.gift),
+            "quantity_to_buy": self.quantity_to_buy,
+            "gift_quantity": self.gift_quantity,
+            "total_gift_price": Decimal(self.total_gift_price),
+        }
 
     def __str__(self):
         return f"BQGPromotion(gift={self.gift}, quantity_to_buy={self.quantity_to_buy}, gift_quantity={self.gift_quantity})"
@@ -102,7 +116,6 @@ class Promotion(models.Model):
     usage_limit = models.PositiveIntegerField(null=True, blank=True, default=MAX_INT)
     usage_count = models.PositiveIntegerField(default=0)
 
-    @property
     def is_valid(self) -> bool:
         """Check if promotion is active, within date range, and under usage limit."""
         return (
@@ -112,14 +125,22 @@ class Promotion(models.Model):
         )
 
     def handle_amount_discount(self, price: Decimal) -> Decimal:
-        """Apply percentage or fixed discount to a price."""
-        if self.percentage_amount:
-            price -= price * (Decimal(self.percentage_amount) / 100)
+        """
+        Apply percentage or fixed amount discount to the given price.
+        Returns the discounted price, ensuring it is not negative.
+        """
+        if not self.is_valid():
+            return Decimal(price)
 
-        if self.fixed_amount:
-            price -= Decimal(self.fixed_amount)
+        discounted_price = Decimal(price)
 
-        return max(price, Decimal("0"))
+        if self.percentage_amount is not None:
+            discounted_price -= discounted_price * (Decimal(self.percentage_amount) / Decimal("100"))
+
+        elif self.fixed_amount is not None:
+            discounted_price -= Decimal(self.fixed_amount)
+
+        return max(discounted_price, Decimal("0"))
 
     def get_promotion(self):
         """
@@ -128,7 +149,7 @@ class Promotion(models.Model):
         """
         if self.bqg:
             return str(self.bqg)
-        # ممكن هنا تضيف أنواع تانية مستقبلاً
+        # Add other promotion types here as needed
         return None
 
     #make if instance has fixed discount cant have percentage discount and vice versa
@@ -136,10 +157,9 @@ class Promotion(models.Model):
         if self.percentage_amount and self.fixed_amount:
             raise ValidationError("Cannot have both percentage and fixed amount discounts.")
 
-        if self.percentage_amount < 0:
+        if self.percentage_amount is not None and self.percentage_amount < 0:
             raise ValidationError("Percentage amount must be positive.")
-
-        if self.fixed_amount < 0:
+        if self.fixed_amount is not None and self.fixed_amount < 0:
             raise ValidationError("Fixed amount must be positive.")
         if self.bqg is None and not (self.percentage_amount or self.fixed_amount):
             raise ValidationError("Either BQG promotion or a discount amount must be set.")

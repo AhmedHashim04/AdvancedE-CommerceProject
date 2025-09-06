@@ -3,7 +3,7 @@ from django.core.cache import cache
 from decimal import Decimal
 from django.utils import timezone
 from apps.store.models import Product
-from apps.promotions.models import Promotion
+from apps.promotions.models import Promotion, BQGPromotion
 
 class ShoppingCart:
     def __init__(self, request):
@@ -32,35 +32,16 @@ class ShoppingCart:
         self.session["cart"] = self.cart
         self.session.modified = True
 
-    def get_promo(self, product, quantity):
-        promo = product.promotion.get_promotion()
-        if promo and promo.is_valid(quantity):
-            return promo
+    def get_promo(self, promotion: BQGPromotion, quantity):
+        promo = promotion.bqq_summary()
+        if promo and promotion.is_valid(quantity):
+            return {k: str(v) if isinstance(v, Decimal) else v for k, v in promo.items()}
         return None
 
-    def disactive_promotion(self, item, promotion: Promotion):
-        item["promotion"] = None
-        item["subtotal"] = self.get_subtotal(item, promotion)
-        self.save()
-
-    def active_promotion(self, item, promotion: Promotion):
-        if promotion.is_valid():
-            item["promotion"] = promotion
-        item["subtotal"] = self.get_subtotal(item)
-        self.save()
-
-    def update(self, product, item, quantity):
+    def update(self, item, quantity):
         current_qty = item["quantity"]
-        max_addable = product.stock - current_qty
-        if max_addable <= 0:
-            return
-        add_qty = min(quantity, max_addable)
+        add_qty = min(quantity)
         item["quantity"] = current_qty + add_qty
-        if not item.get("promotion"):
-            promo = self.get_promo(product, item["quantity"])
-            if promo:
-                self.active_promotion(item, promo)
-        self.save()
 
     def add(self, product, quantity: int = 1) -> None:
         if not product.pk:
@@ -70,35 +51,59 @@ class ShoppingCart:
             self.remove(product)
             return
 
+        max_addable = product.stock_quantity - quantity
+        if max_addable <= 0:
+            quantity = min(quantity, product.stock_quantity)
+
         slug = str(product.slug)
         item = self.cart.get(slug)
-        promo = self.get_promo(product, quantity)
 
         if item:
-            self.update(product, item, quantity)
+            self.update(item, Decimal(quantity))
+
         else:
             self.cart[slug] = {
-                "price": str(Decimal(product.final_price)),
-                "quantity": min(quantity, product.stock),
-                # "tax_rate": str(Decimal(product.tax_rate)),
-                "promotion": str(promo) if promo else None,
+                "price": str(product.final_price),
+                "quantity": str(min(quantity, product.stock_quantity)),
                 "added_at": timezone.now().isoformat(),
             }
-            cart_item = self.cart[slug]
-            self.cart[slug].update({"subtotal": self.get_subtotal(cart_item)})
+
+        if product.promotion.bqg:
+            promo = self.get_promo(product.promotion.bqg, quantity)
+            self.cart[slug]["promotion"] = promo
+
+        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
 
         self.save()
 
     def get_subtotal(self, item):
-        base_price = Decimal(item["price"]) * item["quantity"] 
-
-        if item["promotion"] :
-            discounted_price = item["promotion"].handle_amount_discount(base_price)
+        base_price = (Decimal(item["price"])) * (Decimal(item["quantity"]))
+        if item["promotion"]:
+            gift_price = (Decimal(item["promotion"]["total_gift_price"])) + base_price
         else:
-            discounted_price = base_price
+            gift_price = base_price
 
-        total_with_tax = discounted_price + discounted_price * Decimal(item["tax_rate"]) / 100
+        total_with_tax = gift_price
         return str(total_with_tax)
+
+    def promotions_summary(self):
+        # promo_summary = {}
+        # for item in self.cart.values():
+        #     if item["promotion"]:
+        #         promo_code = item["promotion"]
+        #         if promo_code not in promo_summary:
+        #             promo_summary[promo_code] = {
+        #                 "count": 0,
+        #                 "total_discount": Decimal("0.00"),
+        #             }
+        #         promo_summary[promo_code]["count"] += item["quantity"]
+        #         original_price = Decimal(item["price"]) * item["quantity"]
+        #         discounted_price = Decimal(item["subtotal"])
+        #         promo_summary[promo_code]["total_discount"] += (original_price - discounted_price)
+        # for promo in promo_summary.values():
+        #     promo["total_discount"] = str(promo["total_discount"])
+        # return promo_summary
+        return None
 
     def get_cart_summary(self):
         total_items = sum(item["quantity"] for item in self.cart.values())
@@ -122,7 +127,7 @@ class ShoppingCart:
         self.session.modified = True
 
     def get_total_price(self):
-        prices = [item["subtotal"] for item in self.cart]
+        prices = [Decimal(item["subtotal"]) for item in self.cart.values()]
         return sum(prices)
     
     def __len__(self):
@@ -154,8 +159,8 @@ class ShoppingCart:
 
             new_quantity = item["quantity"]
 
-            if new_quantity > product.stock:
-                new_quantity = product.stock
+            if new_quantity > product.stock_quantity:
+                new_quantity = product.stock_quantity
 
             if product_slug in merged_cart:
                 merged_cart[product_slug]["quantity"] = new_quantity
@@ -167,3 +172,18 @@ class ShoppingCart:
         cache.set(user_cart_key, merged_cart, timeout=3600)
         cache.delete(session_cart_key)
         return added_count
+
+    def disactive_promotion(self, cart, promotion: Promotion):
+        for item in cart.values():
+            if item["promotion"] == promotion:
+                item["promotion"] = None
+                item["subtotal"] = self.get_subtotal(item)
+        self.save()
+    def active_promotion(self, cart, item):
+        promo = self.get_promo(item["promotion"], item["quantity"])
+        if promo:
+            for cart_item in cart.values():
+                if cart_item["product"] == item["product"]:
+                    cart_item["promotion"] = item["promotion"]
+                cart_item["subtotal"] = self.get_subtotal(cart_item)
+        self.save()

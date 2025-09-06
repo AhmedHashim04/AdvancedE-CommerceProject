@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 # from django.db.models import Q
 from django.utils.text import slugify
@@ -168,9 +169,9 @@ class Product(SEOFieldsMixin, models.Model):
     @property
     def final_price(self):
         price = self.base_price
-
-        if not self.promotion.is_valid:
-            return price 
+        if not (self.promotion and self.promotion.is_valid()):
+            return Decimal(price) 
         
         if self.promotion.percentage_amount or self.promotion.fixed_amount:
             return self.promotion.handle_amount_discount(price)
+        return price

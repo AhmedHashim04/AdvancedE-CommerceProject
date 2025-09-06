@@ -2,6 +2,7 @@
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from rest_framework import permissions
+from apps.promotions.models import Promotion
 from apps.store.models import Product
 from apps.cart.cart import ShoppingCart
 from django.utils.translation import gettext as _
@@ -29,7 +30,9 @@ def cart_add(request, slug):
     return JsonResponse({
         "message": "Product added to cart",
         "product": slug,
+        "promotion": cart.cart[slug].get("promotion"),
         "quantity": quantity,
+        "cart": cart.cart,
     }, status=200)
 
 # @ratelimit(key='ip', rate='20/m', method='POST', block=True)
@@ -67,7 +70,7 @@ def cart_remove(request, slug):
     }, status=200)
 
 @csrf_exempt
-@require_POST
+# @require_POST
 def cart_clear(request):
     cart = ShoppingCart(request)
     cart.clear()
@@ -83,3 +86,5 @@ class CartListView(APIView):
             "cart": cart.cart,  # or serialize as needed
             "cart_summary": cart_summary
         })
+    
+
