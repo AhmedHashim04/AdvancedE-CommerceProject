@@ -5,7 +5,6 @@ from rest_framework import permissions
 from apps.promotions.models import Promotion
 from apps.store.models import Product
 from apps.cart.cart import ShoppingCart
-from .utils import get_cart
 
 from django.utils.translation import gettext as _
 from rest_framework.response import Response
@@ -38,26 +37,6 @@ def cart_add(request, slug):
     }, status=200)
 
 
-# @require_POST
-@csrf_exempt
-def cart_add2(request, slug):
-    cart = get_cart(request)
-
-    product = get_object_or_404(Product, slug=slug)
-    quantity = int(request.POST.get("quantity", 1))
-
-    if quantity <= 0:
-        return JsonResponse({"error": "Quantity must be greater than 0"}, status=400)
-
-    cart.add(product=product, quantity=quantity)
-
-    return JsonResponse({
-        "message": "Product added to cart",
-        "product": slug,
-        "promotion": cart.cart[slug].get("promotion"),
-        "quantity": quantity,
-        "cart": cart.cart,
-    }, status=200)
 
 
 # @ratelimit(key='ip', rate='10/m', method='POST', block=True)

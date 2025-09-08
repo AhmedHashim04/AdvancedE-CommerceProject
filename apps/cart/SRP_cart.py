@@ -55,39 +55,45 @@ class CartCalculator:
 
 
 class PromotionService:
-    def get_promotion(self, product, quantity):
-        if promo := getattr(product, "promotion", None):
-            promo_data = promo.summary(quantity)
+    def __init__(self, cart={}, product=None, quantity=0):
+        self.cart = cart
+        self.product = product
+        self.quantity = quantity
+        self.promo = self.get_promotion()
+
+
+    def get_promotion(self):
+        if promo := getattr(self.product, "promotion", None):
+            promo_data = promo.summary(self.quantity)
             return {
                 k: (str(v) if isinstance(v, Decimal) else v)
                 for k, v in promo_data.items()
             }
         return None
 
-    def apply_promotion(self, cart, product):
-        slug = str(product.slug)
-        if slug not in cart:
-            return cart
-        promo = self.get_promotion(product, int(cart[slug]["quantity"]))
-        if promo:
-            cart[slug]["promotion"] = promo
-        return cart
+    def apply_promotion(self):
+        slug = str(self.product.slug)
+        if slug not in self.cart:
+            return self.cart
+        if self.promo:
+            self.cart[slug]["promotion"] = self.promo
+        return self.cart
 
-    def deactive_promotion(self, cart, product):
-        slug = str(product.slug)
-        if slug not in cart:
-            return cart
-        cart[slug].pop("promotion", None)
-        return cart
+    def deactive_promotion(self):
+        slug = str(self.product.slug)
+        if slug not in self.cart:
+            return self.cart
+        self.cart[slug].pop("promotion", None)
+        return self.cart
 
-    def reactive_promotion(self, cart, product):
-        slug = str(product.slug)
-        if slug not in cart:
-            return cart
-        promo = self.get_promotion(product, int(cart[slug]["quantity"]))
-        if promo:
-            cart[slug]["promotion"] = promo
-        return cart
+    def reactive_promotion(self):
+        slug = str(self.product.slug)
+        if slug not in self.cart:
+            return self.cart
+        if self.promo:
+            self.cart[slug]["promotion"] = self.promo
+        return self.cart
+
 
 
 class CartManager:
@@ -114,6 +120,14 @@ class CartManager:
 
     def clear(self):
         self.cart = {}
+        self.storage.save(self.request, self.cart)
+
+    def deactive_promotion(self):
+        self.cart = self.promo_service.deactive_promotion(self.cart)
+        self.storage.save(self.request, self.cart)
+
+    def reactive_promotion(self):
+        self.cart = self.promo_service.reactive_promotion(self.cart)
         self.storage.save(self.request, self.cart)
 
     def summary(self):
