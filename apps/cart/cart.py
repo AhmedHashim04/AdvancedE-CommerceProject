@@ -2,8 +2,9 @@ from django.conf import settings
 from django.core.cache import cache
 from decimal import Decimal
 from django.utils import timezone
+from apps.promotions.management.commands import promo
 from apps.store.models import Product
-from apps.promotions.models import Promotion, BQGPromotion
+from apps.promotions.models import Promotion
 
 class ShoppingCart:
     def __init__(self, request):
@@ -31,12 +32,6 @@ class ShoppingCart:
         cache.set(cache_key, self.cart, timeout=3600)
         self.session["cart"] = self.cart
         self.session.modified = True
-
-    def get_promo(self, promotion: BQGPromotion, quantity):
-        promo = promotion.bqq_summary()
-        if promo and promotion.is_valid(quantity):
-            return {k: str(v) if isinstance(v, Decimal) else v for k, v in promo.items()}
-        return None
 
     def update(self, item, quantity):
         current_qty = item["quantity"]
@@ -68,9 +63,8 @@ class ShoppingCart:
                 "added_at": timezone.now().isoformat(),
             }
 
-        if product.promotion.bqg:
-            promo = self.get_promo(product.promotion.bqg, quantity)
-            self.cart[slug]["promotion"] = promo
+        if promo := product.promotion:
+            self.cart[slug]["promotion"] = promo.summary()
 
         self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
 
@@ -87,26 +81,10 @@ class ShoppingCart:
         return str(total_with_tax)
 
     def promotions_summary(self):
-        # promo_summary = {}
-        # for item in self.cart.values():
-        #     if item["promotion"]:
-        #         promo_code = item["promotion"]
-        #         if promo_code not in promo_summary:
-        #             promo_summary[promo_code] = {
-        #                 "count": 0,
-        #                 "total_discount": Decimal("0.00"),
-        #             }
-        #         promo_summary[promo_code]["count"] += item["quantity"]
-        #         original_price = Decimal(item["price"]) * item["quantity"]
-        #         discounted_price = Decimal(item["subtotal"])
-        #         promo_summary[promo_code]["total_discount"] += (original_price - discounted_price)
-        # for promo in promo_summary.values():
-        #     promo["total_discount"] = str(promo["total_discount"])
-        # return promo_summary
         return None
 
     def get_cart_summary(self):
-        total_items = sum(item["quantity"] for item in self.cart.values())
+        total_items = sum(int(item["quantity"]) for item in self.cart.values())
         total_price = self.get_total_price()
         return {
             "total_items": total_items,
@@ -173,17 +151,20 @@ class ShoppingCart:
         cache.delete(session_cart_key)
         return added_count
 
-    def disactive_promotion(self, cart, promotion: Promotion):
-        for item in cart.values():
-            if item["promotion"] == promotion:
-                item["promotion"] = None
-                item["subtotal"] = self.get_subtotal(item)
-        self.save()
-    def active_promotion(self, cart, item):
-        promo = self.get_promo(item["promotion"], item["quantity"])
-        if promo:
+    def disactive_promotion(self, cart, item):
+        promo = item.get("promotion")
+        if promo and promo["type"] in ["BQG"]:
             for cart_item in cart.values():
+                if cart_item["product"] == item["product"]:
+                    cart_item["promotion"] = promo
+                cart_item["subtotal"] = self.get_subtotal(cart_item)
+            self.save()
+
+    def active_promotion(self, item):
+        promo = item.get("promotion")
+        if promo["type"] in ["BQG"]:
+            for cart_item in self.cart.values():
                 if cart_item["product"] == item["product"]:
                     cart_item["promotion"] = item["promotion"]
                 cart_item["subtotal"] = self.get_subtotal(cart_item)
-        self.save()
+                self.save()

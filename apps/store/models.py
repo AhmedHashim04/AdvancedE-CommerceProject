@@ -169,9 +169,6 @@ class Product(SEOFieldsMixin, models.Model):
     @property
     def final_price(self):
         price = self.base_price
-        if not (self.promotion and self.promotion.is_valid()):
-            return Decimal(price) 
-        
-        if self.promotion.percentage_amount or self.promotion.fixed_amount:
-            return self.promotion.handle_amount_discount(price)
+        if self.promotion :
+            price = self.promotion.apply_discount(price)
         return price

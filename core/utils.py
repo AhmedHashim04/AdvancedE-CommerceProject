@@ -1,6 +1,5 @@
 
 from rest_framework import serializers
-MAX_INT = 2147483647
 
 def get_client_ip(request):
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
