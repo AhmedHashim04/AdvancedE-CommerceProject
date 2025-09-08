@@ -72,7 +72,15 @@ class BQGPromotion(BasePromotion):
             bought_qty >= self.quantity_to_buy
             and self.gift.stock_quantity >= self.gift_quantity
         )
-
+    @property
+    def discount_on_gift(self) -> Decimal:
+        original_price = self.base_gift_price
+        """Calculate discount amount on gift based on promotion settings."""
+        if self.percentage_amount is not None:
+            return str((original_price * (self.percentage_amount / Decimal("100"))).quantize(DECIMAL_PRECISION)) + "% Off"
+        if self.fixed_amount is not None:
+            return str(min(self.fixed_amount, original_price).quantize(DECIMAL_PRECISION)) + " Off"
+        return Decimal("0.00")
     @property
     def base_gift_price(self) -> Decimal:
         """Price of gift items before applying discounts."""
@@ -103,15 +111,39 @@ class BQGPromotion(BasePromotion):
     def total_gift_price(self) -> Decimal:
         """Total price of all gift items after applying discounts and tax."""
         return self.discounted_gift_price_with_tax
-
-    def summary(self) -> dict:
-        return {
+    
+    def summary(self, bought_qty: int) -> dict:
+        """
+        Returns a detailed summary of the BQG promotion, including validation status and prerequisites.
+        """
+        can_apply = self.is_valid(bought_qty)
+        summary_data = {
             "type": "BQG",
             "gift": str(self.gift),
             "quantity_to_buy": self.quantity_to_buy,
             "gift_quantity": self.gift_quantity,
+            "base_gift_price": self.base_gift_price,
+            "discounted_gift_price": self.discount_on_gift,
             "total_gift_price": self.total_gift_price,
+            "can_apply": can_apply,
         }
+
+        discounted_price = self.discounted_gift_price
+        prerequisite = None
+        if not can_apply:
+            prerequisite = (
+                f"Buy {self.quantity_to_buy} to get {self.gift_quantity} x {self.gift} "
+                f"for {'free' if discounted_price == 0 else f'${discounted_price}'}."
+            )
+            summary_data.update({
+                "prerequisite": prerequisite,
+            })
+        else:
+            summary_data.update({
+                "prerequisite": None,
+
+            })
+        return summary_data
 
     def __str__(self):
         if self.percentage_amount:
@@ -310,7 +342,7 @@ class Promotion(BasePromotion):
         return max(discounted_price, Decimal("0")).quantize(DECIMAL_PRECISION, rounding=ROUND_HALF_UP)
 
 
-    def summary(self) -> dict:
+    def summary(self, bought_qty: int) -> dict:
         base = {
             "id": str(self.id),
             "type": self.type,
@@ -323,7 +355,7 @@ class Promotion(BasePromotion):
         elif self.type == PromotionType.FIXED:
             base["fixed_amount"] = self.fixed_amount
         elif self.type == PromotionType.BQG and self.bqg_promotion:
-            base.update(self.bqg_promotion.summary())
+            base.update(self.bqg_promotion.summary(bought_qty))
         # elif self.type == PromotionType.SHIPPING and self.shipping_promotion:
         #     base.update(self.shipping_promotion.summary())
         return base

@@ -15,7 +15,7 @@ from django.http import JsonResponse
 
 # @ratelimit(key='ip', rate='100/m', method='POST', block=True)
 
-# @require_POST
+@require_POST
 @csrf_exempt
 def cart_add(request, slug):
     cart = ShoppingCart(request)
@@ -35,25 +35,6 @@ def cart_add(request, slug):
         "cart": cart.cart,
     }, status=200)
 
-# @ratelimit(key='ip', rate='20/m', method='POST', block=True)
-# @require_POST
-@csrf_exempt
-def cart_update(request, slug):
-    cart = ShoppingCart(request)
-    product = get_object_or_404(Product, slug=slug)
-    quantity = int(request.POST.get("quantity", 1))
-
-    if quantity <= 0:
-        return JsonResponse({"error": "Quantity must be greater than 0"}, status=400)
-
-
-    cart.add(product=product, quantity=quantity)
-    return JsonResponse({
-        "message": "Product updated in cart",
-        "product": slug,
-        "quantity": quantity,
-    }, status=200)
-
 # @ratelimit(key='ip', rate='10/m', method='POST', block=True)
 @csrf_exempt
 @require_POST
@@ -70,7 +51,7 @@ def cart_remove(request, slug):
     }, status=200)
 
 @csrf_exempt
-# @require_POST
+@require_POST
 def cart_clear(request):
     cart = ShoppingCart(request)
     cart.clear()

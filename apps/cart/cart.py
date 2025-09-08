@@ -1,3 +1,4 @@
+from functools import cached_property
 from django.conf import settings
 from django.core.cache import cache
 from decimal import Decimal
@@ -36,7 +37,17 @@ class ShoppingCart:
     def update(self, item, quantity):
         current_qty = item["quantity"]
         add_qty = min(quantity)
-        item["quantity"] = current_qty + add_qty
+        item["quantity"] = str(int(current_qty) + int(add_qty))
+
+    def get_promotion(self, product):
+        if promo := product.promotion:
+            promo_data = promo.summary(int(self.cart[product.slug]["quantity"]))
+            safe_promo_data = {
+                k: (str(v) if isinstance(v, Decimal) else v)
+                for k, v in promo_data.items()
+            }
+            return safe_promo_data
+        return None
 
     def add(self, product, quantity: int = 1) -> None:
         if not product.pk:
@@ -54,8 +65,7 @@ class ShoppingCart:
         item = self.cart.get(slug)
 
         if item:
-            self.update(item, Decimal(quantity))
-
+            self.update(item, str(quantity))
         else:
             self.cart[slug] = {
                 "price": str(product.final_price),
@@ -63,25 +73,24 @@ class ShoppingCart:
                 "added_at": timezone.now().isoformat(),
             }
 
-        if promo := product.promotion:
-            self.cart[slug]["promotion"] = promo.summary()
 
-        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
 
+        self.cart[slug].update({"promotion": self.get_promotion(product)})
+
+        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], product))})
         self.save()
 
-    def get_subtotal(self, item):
-        base_price = (Decimal(item["price"])) * (Decimal(item["quantity"]))
-        if item["promotion"]:
-            gift_price = (Decimal(item["promotion"]["total_gift_price"])) + base_price
-        else:
-            gift_price = base_price
+    def get_subtotal(self, item, product):
+        base_price = Decimal(item["price"]) * Decimal(item["quantity"])
+        gift_price = base_price
+        print("Gift Price:", gift_price)
+        if promo := self.get_promotion(product) :
+            if promo.get("can_apply"):
+                gift_price += Decimal(promo.get("total_gift_price", 0))
 
+        print("Gift Price:", gift_price)
         total_with_tax = gift_price
         return str(total_with_tax)
-
-    def promotions_summary(self):
-        return None
 
     def get_cart_summary(self):
         total_items = sum(int(item["quantity"]) for item in self.cart.values())
@@ -96,13 +105,14 @@ class ShoppingCart:
         if slug in self.cart:
             del self.cart[slug]
             self.save()
-
+ 
     def clear(self):
         self.cart = {}
         cache_key = self._cache_key()
         cache.delete(cache_key)
         self.session["cart"] = {}
-        self.session.modified = True
+        self.save()
+
 
     def get_total_price(self):
         prices = [Decimal(item["subtotal"]) for item in self.cart.values()]

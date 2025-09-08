@@ -76,12 +76,11 @@ urlpatterns += [
 
 ]
 
-from apps.cart.views import CartListView, cart_add, cart_update, cart_remove, cart_clear
+from apps.cart.views import CartListView, cart_add, cart_remove, cart_clear
 urlpatterns += [
 
     path("cart/", CartListView.as_view(), name="cart-list"),
     path("cart/<slug:slug>/add/", cart_add, name="cart-add"),
-    path("cart/<slug:slug>/update/", cart_update, name="cart-update"),
     path("cart/<slug:slug>/remove/", cart_remove, name="cart-remove"),
     path("cart/clear/", cart_clear, name="cart-clear"),
 ]
