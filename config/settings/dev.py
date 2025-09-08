@@ -11,7 +11,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 # ----------- HOSTS & CORS -----------
 
 ALLOWED_HOSTS = ['*']
@@ -32,6 +31,7 @@ CACHES = {
 #     }
 # }
 
+# SESSION_ENGINE = 'django.contrib.sessions.backends.'
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # مدة الحياة بالثواني (هنا أسبوع)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # لو True يتم المسح عند غلق المتصفح
 
