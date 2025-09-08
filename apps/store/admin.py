@@ -1,35 +1,45 @@
 from django.contrib import admin
-# from django.utils.html import format_html
-# from .models import Product, Brand, Category, Tag, ProductImage, ProductColor
-# # from apps.orders.models import ShippingClass
-from .models import Product
-admin.site.register(Product)
-# @admin.register(Product)
-# class ProductAdmin(admin.ModelAdmin):
-#     list_display = ("name", "brand", "category", "price", "stock_quantity", "is_in_stock", "thumbnail")
-#     list_filter = ("brand", "category", "is_active", "is_featured")
-#     search_fields = ("name", "sku", "barcode")
-#     prepopulated_fields = {"slug": ("name",)}
-#     readonly_fields = ("views_count", "sales_count","price")
 
-#     def thumbnail(self, obj):
-#         if obj.main_image:
-#             return format_html(f'<img src="mediafiles/{obj.main_image}" width="50" height="50" style="object-fit: cover; border-radius: 5px;" />')
+from .models import Brand, Category, Product, ProductImage, ProductColor, Tag
 
-#         return "No Image"
-#     thumbnail.short_description = "Image" 
+from django.contrib import admin
 
-#     def get_queryset(self, request):
-#         """تحديد المنتجات ذات المخزون المنخفض"""
-#         qs = super().get_queryset(request)
-#         for product in qs:
-#             if product.is_low_stock():
-#                 product.name = f"⚠ {product.name}"
-#         return qs
+from .models import Brand, Category, Product, ProductImage, ProductColor, Tag
 
-# admin.site.register(Brand)
-# admin.site.register(Category)
-# admin.site.register(Tag)
-# admin.site.register(ProductImage)
-# admin.site.register(ProductColor)
-# # admin.site.register(ShippingClass)
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug")
+    search_fields = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "parent")
+    search_fields = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
+    list_filter = ("parent",)
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug")
+    search_fields = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
+
+@admin.register(ProductColor)
+class ProductColorAdmin(admin.ModelAdmin):
+    list_display = ("name", "hex_code")
+    search_fields = ("name", "hex_code")
+
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ("image", "alt_text")
+    search_fields = ("alt_text",)
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ("name", "brand", "category", "base_price", "stock_quantity", "promotion", "is_active", "is_featured")
+    search_fields = ("name", "description", "brand__name", "category__name")
+    list_filter = ("brand", "category", "is_active", "is_featured", "is_on_sale")
+    autocomplete_fields = ["brand", "category", "tags", "color_options"]
+    readonly_fields = ("views_count", "sales_count", "created_at", "updated_at")
+    prepopulated_fields = {"slug": ("name",)}
