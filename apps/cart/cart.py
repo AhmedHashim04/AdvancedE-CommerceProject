@@ -3,7 +3,6 @@ from django.conf import settings
 from django.core.cache import cache
 from decimal import Decimal
 from django.utils import timezone
-from apps.promotions.management.commands import promo
 from apps.store.models import Product
 from apps.promotions.models import Promotion
 
