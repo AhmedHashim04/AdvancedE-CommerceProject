@@ -161,20 +161,23 @@ class ShoppingCart:
         cache.delete(session_cart_key)
         return added_count
 
-    def disactive_promotion(self, cart, item):
-        promo = item.get("promotion")
+    def disactive_promotion(self, product):
+        promo = self.get_promotion(product)
+        item = self.cart.get(str(product.slug))
+        if item is None:
+            return
         if promo and promo["type"] in ["BQG"]:
-            for cart_item in cart.values():
-                if cart_item["product"] == item["product"]:
-                    cart_item["promotion"] = promo
-                cart_item["subtotal"] = self.get_subtotal(cart_item)
+            item["promotion"] = "disactivated"
             self.save()
+        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})
 
-    def active_promotion(self, item):
-        promo = item.get("promotion")
-        if promo["type"] in ["BQG"]:
-            for cart_item in self.cart.values():
-                if cart_item["product"] == item["product"]:
-                    cart_item["promotion"] = item["promotion"]
-                cart_item["subtotal"] = self.get_subtotal(cart_item)
-                self.save()
+
+    def active_promotion(self, product):
+        item = self.cart.get(str(product.slug))
+        if item is None:
+            return
+        promo = self.get_promotion(product)
+        if promo and promo["type"] in ["BQG"]:
+            item["promotion"] = promo
+            self.save()
+        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})

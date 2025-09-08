@@ -69,3 +69,20 @@ class CartListView(APIView):
         })
     
 
+from apps.cart.cart import ShoppingCart
+# active / disactive promotion
+@csrf_exempt
+@require_POST
+def cart_active_promotion(request, slug):
+    cart = ShoppingCart(request)
+    product = get_object_or_404(Product, slug=slug)
+    cart.active_promotion(product)
+    return JsonResponse({"message": "Promotion activated"}, status=200)
+
+@csrf_exempt
+@require_POST
+def cart_disactive_promotion(request, slug):
+    cart = ShoppingCart(request)
+    product = get_object_or_404(Product, slug=slug)
+    cart.disactive_promotion(product)
+    return JsonResponse({"message": "Promotion deactivated"}, status=200)
