@@ -76,34 +76,17 @@ urlpatterns += [
 
 ]
 
-from apps.cart.views import CartListView, cart_add, cart_remove, cart_clear, cart_active_promotion, cart_disactive_promotion 
-urlpatterns += [
 
-    path("cart/", CartListView.as_view(), name="cart-list"),
-
-    path("cart/<slug:slug>/add/", cart_add, name="cart-add"),
-    path("cart/<slug:slug>/remove/", cart_remove, name="cart-remove"),
-    path("cart/clear/", cart_clear, name="cart-clear"),
-    path("cart/<slug:slug>/active/", cart_active_promotion, name="cart-active-promotion"),
-    path("cart/<slug:slug>/disactive/", cart_disactive_promotion, name="cart-disactive-promotion"),
-]
-from apps.cart.SRP_views import CartListView, CartAddView, CartRemoveView, CartClearView, CartPromotionDeactivateView, CartPromotionReactivateView
+from apps.cart.views import CartListView, CartAddView, CartRemoveView, CartClearView, CartPromotionDeactivateView, CartPromotionReactivateView
 
 urlpatterns += [
     path("cart/", CartListView.as_view(), name="cart-list"),
-    path("cart/add/", CartAddView.as_view(), name="cart-add"),
-    path("cart/remove/", CartRemoveView.as_view(), name="cart-remove"),
+    path("cart/add/<slug:slug>/", CartAddView.as_view(), name="cart-add"),
+    path("cart/remove/<slug:slug>/", CartRemoveView.as_view(), name="cart-remove"),
     path("cart/clear/", CartClearView.as_view(), name="cart-clear"),
     path("promotion/deactivate/<slug:slug>/", CartPromotionDeactivateView.as_view(), name="cart_promo_deactivate"),
     path("promotion/reactivate/<slug:slug>/", CartPromotionReactivateView.as_view(), name="cart_promo_reactivate"),
 ]
-
-# from apps.coupons.views import apply_coupon, remove_coupon
-# urlpatterns += [
-#     path("coupons/apply/", apply_coupon, name="apply-coupon"),
-#     path("coupons/remove/", remove_coupon, name="remove-coupon"),
-# ]
-
 from apps.orders.views import OrderCancelView, OrderCreateView, OrderDetailView, OrderListView
 urlpatterns += [
     path("orders/", OrderListView.as_view(), name="order-list"),

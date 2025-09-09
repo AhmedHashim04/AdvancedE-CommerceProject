@@ -1,92 +1,116 @@
 
-from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_POST
-from rest_framework import permissions
-from apps.promotions.models import Promotion
-from apps.store.models import Product
-from apps.cart.cart import ShoppingCart
 
-from django.utils.translation import gettext as _
-from rest_framework.response import Response
+# views.py
 from rest_framework.views import APIView
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-# from django_ratelimit.decorators import ratelimit
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from django.shortcuts import get_object_or_404
 
+from apps.store.models import Product
+from .utils import get_cart
 
-# @ratelimit(key='ip', rate='100/m', method='POST', block=True)
-
-@require_POST
-@csrf_exempt
-def cart_add(request, slug):
-    cart = ShoppingCart(request)
-    product = get_object_or_404(Product, slug=slug)
-    quantity = int(request.POST.get("quantity", 1))
-
-    if quantity <= 0:
-        return JsonResponse({"error": "Quantity must be greater than 0"}, status=400)
-
-    cart.add(product=product, quantity=quantity)
-
-    return JsonResponse({
-        "message": "Product added to cart",
-        "product": slug,
-        "promotion": cart.cart[slug].get("promotion"),
-        "quantity": quantity,
-        "cart": cart.cart,
-    }, status=200)
-
-
-
-
-# @ratelimit(key='ip', rate='10/m', method='POST', block=True)
-@csrf_exempt
-@require_POST
-def cart_remove(request, slug):
-    cart = ShoppingCart(request)
-    product = get_object_or_404(Product, slug=slug)
-    if product.slug not in cart.cart:
-        return JsonResponse({"error": "Product not in cart"}, status=400)
-    cart.remove(product)
-
-    return JsonResponse({
-        "message": "Product removed from cart",
-        "product": slug,
-    }, status=200)
-
-@csrf_exempt
-@require_POST
-def cart_clear(request):
-    cart = ShoppingCart(request)
-    cart.clear()
-
-    return JsonResponse({"message": "Cart cleared"}, status=200)
 
 class CartListView(APIView):
+    """
+    View the contents of the cart + summary
+    """
     permission_classes = [permissions.AllowAny]
+
     def get(self, request, *args, **kwargs):
-        cart = ShoppingCart(request)
-        cart_summary = cart.get_cart_summary()
+        cart = get_cart(request)
+        cart_summary = cart.summary()
+
         return Response({
-            "cart": cart.cart,  # or serialize as needed
+            "auth": request.user.is_authenticated,
+            "cart": cart.cart,
             "cart_summary": cart_summary
-        })
-    
+        }, status=status.HTTP_200_OK)
 
-from apps.cart.cart import ShoppingCart
-# active / disactive promotion
-@csrf_exempt
-@require_POST
-def cart_active_promotion(request, slug):
-    cart = ShoppingCart(request)
-    product = get_object_or_404(Product, slug=slug)
-    cart.active_promotion(product)
-    return JsonResponse({"message": "Promotion activated"}, status=200)
 
-@csrf_exempt
-@require_POST
-def cart_disactive_promotion(request, slug):
-    cart = ShoppingCart(request)
-    product = get_object_or_404(Product, slug=slug)
-    cart.disactive_promotion(product)
-    return JsonResponse({"message": "Promotion deactivated"}, status=200)
+class CartAddView(APIView):
+    """
+    Add a product to the cart
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, slug, *args, **kwargs):
+        product = get_object_or_404(Product, slug=slug)
+        quantity = int(request.data.get("quantity", 1))
+
+        cart = get_cart(request).add(product, quantity)
+
+        return Response({
+            "message": "Product added to cart",
+            "cart": cart.cart,
+            "summary": cart.summary()
+        }, status=status.HTTP_200_OK)
+
+
+class CartRemoveView(APIView):
+    """
+    Remove a product from the cart
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def delete(self, request, slug, *args, **kwargs):
+        product = get_object_or_404(Product, slug=slug)
+
+        cart = get_cart(request).remove(product)
+
+        return Response({
+            "message": "Product removed from cart",
+            "cart": cart.cart,
+            "summary": cart.summary()
+        }, status=status.HTTP_200_OK)
+
+
+class CartClearView(APIView):
+    """
+    Clear the cart completely
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        cart = get_cart(request).clear()
+
+        return Response({
+            "message": "Cart cleared",
+            "cart": cart.cart,
+            "summary": cart.summary()
+        }, status=status.HTTP_200_OK)
+
+
+class CartPromotionDeactivateView(APIView):
+    """
+    Deactivate a promotion for a specific product in the cart
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, slug, *args, **kwargs):
+        product = get_object_or_404(Product, slug=slug)
+
+        cart = get_cart(request).deactive_promotion(product)
+
+        return Response({
+            "message": "Deactivated promotion for this product",
+            "cart": cart.cart,
+            "summary": cart.summary()
+        }, status=status.HTTP_200_OK)
+
+
+class CartPromotionReactivateView(APIView):
+    """
+    Reactivate a promotion for a specific product in the cart
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, slug, *args, **kwargs):
+        product = get_object_or_404(Product, slug=slug)
+
+        cart = get_cart(request).reactive_promotion(product)
+
+        return Response({
+            "message": "Reactivated promotion for this product",
+            "cart": cart.cart,
+            "summary": cart.summary()
+        }, status=status.HTTP_200_OK)

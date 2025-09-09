@@ -1,8 +1,4 @@
-
-from .SRP_cart import CartManager, CartStorage, CartCalculator, PromotionService
+from .cart import ShoppingCart
 
 def get_cart(request):
-    storage = CartStorage()
-    calculator = CartCalculator()
-    promo_service = PromotionService()
-    return CartManager(request, storage, calculator, promo_service)
+    return ShoppingCart(request)
