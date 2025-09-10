@@ -92,7 +92,7 @@ class CartPromotionDeactivateView(APIView):
         product = get_object_or_404(Product, slug=slug)
 
         cart = get_cart(request)
-        cart.deactivate_promotion(product)
+        cart.deactive_promotion(product)
 
         return Response({
             "message": "Deactivated promotion for this product",
@@ -111,7 +111,7 @@ class CartPromotionReactivateView(APIView):
         product = get_object_or_404(Product, slug=slug)
 
         cart = get_cart(request)
-        cart.reactivate_promotion(product)
+        cart.reactive_promotion(product)
 
         return Response({
             "message": "Reactivated promotion for this product",

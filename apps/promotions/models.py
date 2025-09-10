@@ -81,6 +81,11 @@ class BQGPromotion(BasePromotion):
         if self.fixed_amount is not None:
             return str(min(self.fixed_amount, original_price).quantize(DECIMAL_PRECISION)) + " Off"
         return Decimal("0.00")
+    
+    @property
+    def unit_gift_price(self):
+        return self.gift.final_price
+
     @property
     def base_gift_price(self) -> Decimal:
         """Price of gift items before applying discounts."""
@@ -122,6 +127,7 @@ class BQGPromotion(BasePromotion):
             "gift": str(self.gift),
             "quantity_to_buy": self.quantity_to_buy,
             "gift_quantity": self.gift_quantity,
+            "unit_gift_price": str(self.unit_gift_price) if self.unit_gift_price else None,
             "base_gift_price": self.base_gift_price,
             "discounted_gift_price": self.discount_on_gift,
             "total_gift_price": self.total_gift_price,
@@ -346,9 +352,6 @@ class Promotion(BasePromotion):
         base = {
             "id": str(self.id),
             "type": self.type,
-            "is_active": self.is_active,
-            "usage_count": self.usage_count,
-            "usage_limit": self.usage_limit,
         }
         if self.type == PromotionType.PERCENTAGE:
             base["percentage_amount"] = self.percentage_amount

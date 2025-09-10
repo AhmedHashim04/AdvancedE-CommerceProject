@@ -39,6 +39,7 @@ class ShoppingCart:
         item["quantity"] = str(int(current_qty) + int(add_qty))
 
     def get_promotion(self, product):
+
         if promo := product.promotion:
             promo_data = promo.summary(int(self.cart[product.slug]["quantity"]))
             safe_promo_data = {
@@ -67,6 +68,7 @@ class ShoppingCart:
             self.update(item, str(quantity))
         else:
             self.cart[slug] = {
+                "base_price": str(product.base_price),
                 "price": str(product.final_price),
                 "quantity": str(min(quantity, product.stock_quantity)),
                 "added_at": timezone.now().isoformat(),
@@ -82,12 +84,17 @@ class ShoppingCart:
     def get_subtotal(self, item, product):
         base_price = Decimal(item["price"]) * Decimal(item["quantity"])
         gift_price = base_price
-        print("Gift Price:", gift_price)
-        if promo := self.get_promotion(product) :
+        
+        if item["promotion"] == "disactivated":
+            print(f"Promotion is deactivated.. : {gift_price}")
+
+            return gift_price
+        
+        if promo := self.get_promotion(product):
+            print(f"Promotion is activated.. : {gift_price}")
             if promo.get("can_apply"):
                 gift_price += Decimal(promo.get("total_gift_price", 0))
 
-        print("Gift Price:", gift_price)
         total_with_tax = gift_price
         return str(total_with_tax)
 
@@ -160,23 +167,25 @@ class ShoppingCart:
         cache.delete(session_cart_key)
         return added_count
 
-    def disactive_promotion(self, product):
+    def deactive_promotion(self, product):
         promo = self.get_promotion(product)
         item = self.cart.get(str(product.slug))
         if item is None:
             return
         if promo and promo["type"] in ["BQG"]:
             item["promotion"] = "disactivated"
-            self.save()
+            
         self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})
+        self.save()
 
 
-    def active_promotion(self, product):
+    def reactive_promotion(self, product):
         item = self.cart.get(str(product.slug))
         if item is None:
             return
         promo = self.get_promotion(product)
         if promo and promo["type"] in ["BQG"]:
             item["promotion"] = promo
-            self.save()
+        
         self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})
+        self.save()
