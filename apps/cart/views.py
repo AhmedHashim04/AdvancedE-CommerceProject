@@ -18,7 +18,7 @@ class CartListView(APIView):
 
     def get(self, request, *args, **kwargs):
         cart = get_cart(request)
-        cart_summary = cart.summary()
+        cart_summary = cart.get_cart_summary()
 
         return Response({
             "auth": request.user.is_authenticated,
@@ -37,12 +37,13 @@ class CartAddView(APIView):
         product = get_object_or_404(Product, slug=slug)
         quantity = int(request.data.get("quantity", 1))
 
-        cart = get_cart(request).add(product, quantity)
+        cart = get_cart(request)
+        cart.add(product, quantity)
 
         return Response({
             "message": "Product added to cart",
-            "cart": cart.cart,
-            "summary": cart.summary()
+            "cart": cart,
+            "summary": cart.get_cart_summary()
         }, status=status.HTTP_200_OK)
 
 
@@ -54,13 +55,13 @@ class CartRemoveView(APIView):
 
     def delete(self, request, slug, *args, **kwargs):
         product = get_object_or_404(Product, slug=slug)
-
-        cart = get_cart(request).remove(product)
+        cart = get_cart(request)
+        cart.remove(product)
 
         return Response({
             "message": "Product removed from cart",
             "cart": cart.cart,
-            "summary": cart.summary()
+            "summary": cart.get_cart_summary()
         }, status=status.HTTP_200_OK)
 
 
@@ -71,12 +72,13 @@ class CartClearView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        cart = get_cart(request).clear()
+        cart = get_cart(request)
+        cart.clear()
 
         return Response({
             "message": "Cart cleared",
             "cart": cart.cart,
-            "summary": cart.summary()
+            "summary": cart.get_cart_summary()
         }, status=status.HTTP_200_OK)
 
 
@@ -89,12 +91,13 @@ class CartPromotionDeactivateView(APIView):
     def post(self, request, slug, *args, **kwargs):
         product = get_object_or_404(Product, slug=slug)
 
-        cart = get_cart(request).deactive_promotion(product)
+        cart = get_cart(request)
+        cart.deactivate_promotion(product)
 
         return Response({
             "message": "Deactivated promotion for this product",
             "cart": cart.cart,
-            "summary": cart.summary()
+            "summary": cart.get_cart_summary()
         }, status=status.HTTP_200_OK)
 
 
@@ -107,10 +110,11 @@ class CartPromotionReactivateView(APIView):
     def post(self, request, slug, *args, **kwargs):
         product = get_object_or_404(Product, slug=slug)
 
-        cart = get_cart(request).reactive_promotion(product)
+        cart = get_cart(request)
+        cart.reactivate_promotion(product)
 
         return Response({
             "message": "Reactivated promotion for this product",
             "cart": cart.cart,
-            "summary": cart.summary()
+            "summary": cart.get_cart_summary()
         }, status=status.HTTP_200_OK)

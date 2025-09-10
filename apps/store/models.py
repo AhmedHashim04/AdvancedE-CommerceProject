@@ -1,12 +1,9 @@
 from decimal import Decimal
 from django.db import models
-# from django.db.models import Q
 from django.utils.text import slugify
 from apps.sellers.models import Seller, ShippingSystem
-from apps.promotions.models import Promotion#, FlashSale
-# from apps.coupons.models import Coupon
+from apps.promotions.models import Promotion
 
-# from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # -------------------------------------
@@ -103,8 +100,8 @@ class Product(SEOFieldsMixin, models.Model):
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
 
-    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products",editable=False)
-    shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.SET_NULL, null=True, related_name="product")
+    # seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products",editable=False)
+    # shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.SET_NULL, null=True, related_name="product")
 
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
     base_price = models.DecimalField(default=0, max_digits=10, decimal_places=2,editable=False)

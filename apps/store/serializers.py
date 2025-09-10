@@ -10,9 +10,7 @@ class DynamicFieldsProductSerializer(serializers.ModelSerializer):
         fields = None
         if "request" in self.context and "fields" in self.context:
             fields = self.context["fields"]
-            fields.remove("brand")
             fields.append("brand_name")
-            fields.remove("category")
             fields.append("category_name")
 
         if fields is not None:

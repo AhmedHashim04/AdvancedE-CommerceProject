@@ -79,7 +79,6 @@ class TaxInfoViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    """البائع يتحكم في منتجاته"""
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated]
 

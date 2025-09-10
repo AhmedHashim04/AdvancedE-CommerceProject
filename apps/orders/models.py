@@ -18,22 +18,6 @@ class OrderStatus(models.TextChoices):
     RETURNED = "returned", _("Returned")
     FAILED = "failed", _("Failed")
 
-class PaymentMethod(models.TextChoices):
-    VISA = "visa", _("Visa")
-    MASTERCARD = "mastercard", _("MasterCard")
-    AMEX = "amex", _("American Express")
-    MEEZA = "meeza", _("Meeza")
-
-    APPLE_PAY = "apple_pay", _("Apple Pay")
-    GOOGLE_PAY = "google_pay", _("Google Pay")
-    PAYPAL = "paypal", _("PayPal")
-
-    CASH_ON_DELIVERY = "cod", _("Cash on Delivery")
-
-    INSTALLMENTS = "installments", _("Installments")
-    BNPL_VALU = "bnpl_valu", _("Buy Now Pay Later (valU)")
-    BNPL_TABBY = "bnpl_tabby", _("Buy Now Pay Later (Tabby)")
-
 
 class ShippingClass(models.TextChoices):
     STANDARD = "standard", _("Standard Shipping")
@@ -44,26 +28,26 @@ class Order(models.Model):
 
     id = models.UUIDField(_("ID"), primary_key=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="orders", verbose_name=_("User"))
-    seller = models.OneToOneField(Seller, on_delete=models.CASCADE, related_name="order")
-
     ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
 
     address = models.ForeignKey("accounts.Address", on_delete=models.PROTECT, related_name="orders", verbose_name=_("Address"))
     full_name = models.CharField(max_length=100, verbose_name=_("Full Name"))
     notes = models.TextField(blank=True, null=True, verbose_name=_("Additional Notes"))
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, verbose_name=_("Status"))
-    payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CASH_ON_DELIVERY, verbose_name=_("Payment Method"))
     shipping_method = models.CharField(max_length=20, choices=ShippingClass.choices, default=ShippingClass.STANDARD, verbose_name=_("Shipping Method"))
-
+    
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Shipping Cost"))
     weight_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Delivery Fee"))
     
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Total Price"))
-    status_changed_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Status Changed At"))
     paid = models.BooleanField(verbose_name=_("Paid"), default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
+    
     invoice_pdf = models.FileField(upload_to="invoices/", null=True, blank=True, verbose_name=_("Invoice PDF"))
+
+    status_changed_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Status Changed At"))
 
     class Meta:
         verbose_name = _("Order")

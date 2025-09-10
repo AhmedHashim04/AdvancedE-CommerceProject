@@ -107,11 +107,11 @@ from apps.sellers.views import (
 
 
 router.register('sellers', SellerViewSet, basename='seller')
-router.register('bank-accounts', BankAccountViewSet, basename='bankaccount')
-router.register('tax-info', TaxInfoViewSet, basename='taxinfo')
-router.register('products', ProductViewSet, basename='seller_products')
-router.register('orders', OrderViewSet, basename='seller_orders')
-router.register('payouts', PayoutViewSet, basename='seller_payout')
+router.register('sellers-bank-accounts', BankAccountViewSet, basename='bankaccount')
+router.register('sellers-tax-info', TaxInfoViewSet, basename='taxinfo')
+router.register('seller-products', ProductViewSet, basename='seller_products')
+router.register('seller-orders', OrderViewSet, basename='seller_orders')
+router.register('seller-payouts', PayoutViewSet, basename='seller_payout')
 
 urlpatterns += [
     path("", include(router.urls)),

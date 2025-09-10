@@ -33,7 +33,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "full_name",
             "notes",
             "status",
-            "payment_method",
             "shipping_method",
             "shipping_cost",
             "weight_cost",
