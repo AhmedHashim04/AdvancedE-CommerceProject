@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Order
-
+ 
 @receiver(post_save, sender=Order)
 def order_status_updated(sender, instance, created, **kwargs):
     """

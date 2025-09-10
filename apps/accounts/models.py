@@ -1,3 +1,4 @@
+from ipaddress import ip_address
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
@@ -41,6 +42,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,
                              related_name='addresses',blank=True,null=True,verbose_name=_("User")) # for Guest checkout
+    ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
     full_name = models.CharField(max_length=255, verbose_name=_("Full Name"),help_text=_("Full Name"))
     phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
     alternate_phone = models.CharField(max_length=11,blank=True,help_text=_("Alternate Phone Number (optional)"),

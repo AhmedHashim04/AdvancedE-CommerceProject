@@ -23,14 +23,14 @@ class Order(models.Model):
     ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
 
     address = models.ForeignKey("accounts.Address", on_delete=models.PROTECT, related_name="orders", verbose_name=_("Address"))
-    full_name = models.CharField(max_length=100, verbose_name=_("Full Name"))
+
     notes = models.TextField(blank=True, null=True, verbose_name=_("Additional Notes"))
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, verbose_name=_("Status"))
     weight_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Delivery Fee"))
-    
+
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Total Price"))
     paid = models.BooleanField(verbose_name=_("Paid"), default=False)
-    
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"))
     
@@ -69,6 +69,7 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"))
+    gift_item = models.BooleanField(default=False, verbose_name=_("Gift Item"))
     discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Discount"))
 
     class Meta:

@@ -1,5 +1,4 @@
-from functools import cached_property
-from django.conf import settings
+
 from django.core.cache import cache
 from decimal import Decimal
 from django.utils import timezone
@@ -36,6 +35,7 @@ class ShoppingCart:
     def update(self, item, quantity):
         current_qty = item["quantity"]
         add_qty = min(quantity)
+        
         #TODO : Make update handle the leakage and the provided quantities
         # if add_qty > current_qty:
         #     item["quantity"] = str(int(current_qty) + int(add_qty))
