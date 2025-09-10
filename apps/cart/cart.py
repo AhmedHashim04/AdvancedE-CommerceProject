@@ -36,8 +36,13 @@ class ShoppingCart:
     def update(self, item, quantity):
         current_qty = item["quantity"]
         add_qty = min(quantity)
-        item["quantity"] = str(int(current_qty) + int(add_qty))
+        #TODO : Make update handle the leakage and the provided quantities
+        # if add_qty > current_qty:
+        #     item["quantity"] = str(int(current_qty) + int(add_qty))
+        # elif add_qty < current_qty:
+        #     item["quantity"] = str(int(current_qty) - int(add_qty))
 
+        item["quantity"] = str(int(current_qty) + int(add_qty))
     def get_promotion(self, product):
 
         if promo := product.promotion:
