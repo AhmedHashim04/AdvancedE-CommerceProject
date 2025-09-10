@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
-
+from apps.accounts.serializers import AddressSerializer
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
 
@@ -13,12 +13,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity",
             "price",
             "discount",
+            "gift_item",
         ]
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True)
-    address = serializers.PrimaryKeyRelatedField(read_only=True)
+    address = AddressSerializer(read_only=True)
 
     class Meta:
         model = Order
@@ -27,7 +28,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "user",
             "ip_address",
             "address",
-            "full_name",
             "notes",
             "status",
             "weight_cost",
