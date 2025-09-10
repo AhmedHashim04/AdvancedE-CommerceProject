@@ -13,10 +13,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity",
             "price",
             "discount",
-            "shipping_cost",
         ]
-        read_only_fields = ["shipping_cost"]
-
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
@@ -33,8 +30,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "full_name",
             "notes",
             "status",
-            "shipping_method",
-            "shipping_cost",
             "weight_cost",
             "total_price",
             "status_changed_at",

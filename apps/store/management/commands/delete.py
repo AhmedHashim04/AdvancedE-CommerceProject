@@ -6,7 +6,7 @@ from apps.store.models import Product, Brand, Category, Tag, ProductImage, Produ
 
 
 class Command(BaseCommand):
-    help = "Deletes all product-related data (Products, Brands, Categories, Tags, ProductImages, ProductColors, ShippingClasses, ...)."
+    help = "Deletes all product-related data (Products, Brands, Categories, Tags, ProductImages, ProductColors, ...)."
 
     def handle(self, *args, **kwargs):
 

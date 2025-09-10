@@ -20,16 +20,10 @@ class DynamicFieldsProductSerializer(serializers.ModelSerializer):
                 self.fields.pop(field_name)
 
 
-# class ShippingClassSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = ShippingClass
-#         fields = ('name', 'description', 'price')
-
 
 class ProductSerializer(DynamicFieldsProductSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     brand_name = serializers.ReadOnlyField(source='brand.name')
-    # shipping_class = ShippingClassSerializer()
     tags = serializers.SerializerMethodField()
     color_options = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()

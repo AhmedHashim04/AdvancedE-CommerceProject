@@ -160,56 +160,6 @@ class BQGPromotion(BasePromotion):
         return f"BQG: Buy {self.quantity_to_buy}, Get {self.gift_quantity} x {self.gift} "
 
 
-# # --------------------
-# # Shipping Promotion (in Cart Overall)
-# # --------------------
-# class ShippingPromotion(BasePromotion):
-#     """
-#     Shipping Promotion
-#     Example: Free shipping above $100, or 50% off shipping cost
-#     """
-#     shipping_discount = models.PositiveIntegerField(
-#         null=True, blank=True,
-#         validators=[MinValueValidator(0), MaxValueValidator(100)],
-#         help_text="Percentage discount on shipping cost (0-100)"
-#     )
-#     min_purchase_amount = models.DecimalField(
-#         max_digits=10, decimal_places=2,
-#         null=True, blank=True,
-#         help_text="Minimum purchase amount to qualify"
-#     )
-
-#     def clean(self):
-#         if self.shipping_discount is None and self.min_purchase_amount is None:
-#             raise ValidationError("Either shipping discount or min purchase amount must be set.")
-
-#     def is_valid(self, cart_total: Decimal) -> bool:
-#         if self.min_purchase_amount and cart_total < self.min_purchase_amount:
-#             return False
-#         return True
-
-#     def apply_discount(self, shipping_cost: Decimal) -> Decimal:
-#         """Apply shipping discount if available."""
-#         if self.shipping_discount:
-#             discount_fraction = Decimal(self.shipping_discount) / Decimal("100")
-#             shipping_cost -= shipping_cost * discount_fraction
-#         return max(shipping_cost, Decimal("0")).quantize(DECIMAL_PRECISION)
-
-#     def summary(self) -> dict:
-#         return {
-#             "type": "Shipping",
-#             "shipping_discount": self.shipping_discount,
-#             "min_purchase_amount": self.min_purchase_amount,
-#         }
-
-#     def __str__(self):
-#         if self.shipping_discount:
-#             return f"Shipping {self.shipping_discount}% off"
-#         if self.min_purchase_amount:
-#             return f"Free shipping over ${self.min_purchase_amount}"
-#         return "Shipping Promotion"
-
-
 # --------------------
 # Promotion Main
 # --------------------
@@ -217,7 +167,6 @@ class PromotionType(models.TextChoices):
     PERCENTAGE = "percentage", "Percentage Discount"
     FIXED = "fixed", "Fixed Discount"
     BQG = "bqg", "Buy X Get Y"
-    SHIPPING = "shipping", "Free/Discounted Shipping"
 
 
 
@@ -247,11 +196,6 @@ class Promotion(BasePromotion):
         null=True, blank=True, related_name="promotion"
     )
 
-    # shipping_promotion = models.OneToOneField(
-    #     "ShippingPromotion", on_delete=models.CASCADE,
-    #     null=True, blank=True, related_name="promotion"
-    # )
-
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
@@ -280,27 +224,21 @@ class Promotion(BasePromotion):
         if self.type == PromotionType.PERCENTAGE:
             if not self.percentage_amount:
                 raise ValidationError("Percentage amount is required for percentage promotions.")
-            if self.fixed_amount or self.bqg_promotion:  # or self.shipping_promotion:
-                raise ValidationError("Percentage promotion cannot have fixed/bqg/shipping fields.")
+            if self.fixed_amount or self.bqg_promotion: 
+                raise ValidationError("Percentage promotion cannot have fixed/bqg fields.")
 
         elif self.type == PromotionType.FIXED:
             if not self.fixed_amount or self.fixed_amount <= Decimal("0.00"):
                 raise ValidationError("Fixed amount must be > 0 for fixed promotions.")
-            if self.percentage_amount or self.bqg_promotion:  # or self.shipping_promotion:
-                raise ValidationError("Fixed promotion cannot have percentage/bqg/shipping fields.")
+            if self.percentage_amount or self.bqg_promotion: 
+                raise ValidationError("Fixed promotion cannot have percentage/bqg fields.")
 
         elif self.type == PromotionType.BQG:
             if not self.bqg_promotion:
                 raise ValidationError("BQG promotion details are required.")
-            if self.percentage_amount or self.fixed_amount:  # or self.shipping_promotion:
-                raise ValidationError("BQG promotion cannot have percentage/fixed/shipping fields.")
+            if self.percentage_amount or self.fixed_amount: 
+                raise ValidationError("BQG promotion cannot have percentage/fixed fields.")
 
-        # elif self.type == PromotionType.SHIPPING:
-        #     if not self.shipping_promotion:
-        #         raise ValidationError("Shipping promotion details are required.")
-        #     if self.percentage_amount or self.fixed_amount or self.bqg_promotion:
-        #         raise ValidationError("Shipping promotion cannot have percentage/fixed/bqg fields.")
-        
         else:
             raise ValidationError("Invalid promotion type.")
 
@@ -359,8 +297,7 @@ class Promotion(BasePromotion):
             base["fixed_amount"] = self.fixed_amount
         elif self.type == PromotionType.BQG and self.bqg_promotion:
             base.update(self.bqg_promotion.summary(bought_qty))
-        # elif self.type == PromotionType.SHIPPING and self.shipping_promotion:
-        #     base.update(self.shipping_promotion.summary())
+
         return base
 
     def __str__(self):
@@ -370,6 +307,4 @@ class Promotion(BasePromotion):
             return f"${self.fixed_amount} off"
         elif self.type == PromotionType.BQG:
             return str(self.bqg_promotion)
-        elif self.type == PromotionType.SHIPPING:
-            return str(self.shipping_promotion)
         return "Promotion (unspecified)"

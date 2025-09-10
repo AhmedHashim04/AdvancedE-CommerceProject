@@ -18,7 +18,6 @@ class CheckoutCreateView(generics.CreateAPIView):
 
         data = request.data
         address_id = data.get("address")
-        # shipping_method = data.get("shipping_method", ShippingClass.STANDARD)
         notes = data.get("notes", "")
 
         try:
@@ -33,7 +32,6 @@ class CheckoutCreateView(generics.CreateAPIView):
                 address=address,
                 full_name=f"{address.first_name} {address.last_name}",
                 notes=notes,
-                # shipping_method=shipping_method,
                 status=OrderStatus.PENDING,
                 total_price=0,
             )
@@ -83,9 +81,6 @@ class CheckoutCreateView(generics.CreateAPIView):
 
                 total_price += (price * quantity) - discount
                 
-            # 3. حساب الشحن
-            # order.calculate_shipping()
-            # total_price += order.shipping_cost
 
             order.total_price = total_price
             order.save()
@@ -97,6 +92,5 @@ class CheckoutCreateView(generics.CreateAPIView):
             "order_id": str(order.id),
             "status": order.status,
             "total_price": str(order.total_price),
-            # "shipping_cost": str(order.shipping_cost),
             "created_at": order.created_at,
         }, status=status.HTTP_201_CREATED)

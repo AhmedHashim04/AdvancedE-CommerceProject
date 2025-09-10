@@ -100,9 +100,6 @@ class Product(SEOFieldsMixin, models.Model):
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
 
-    # seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="products",editable=False)
-    # shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.SET_NULL, null=True, related_name="product")
-
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
     base_price = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
