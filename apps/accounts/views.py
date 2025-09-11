@@ -49,9 +49,8 @@ class RegisterView(CreateAPIView):
         user.verified = False
         user.save()
 
-        # توليد كود OTP
         otp = random.randint(100000, 999999)
-        cache.set(f"otp_{user.email}", otp, timeout=300)
+        cache.set(f"otp_{user.email}", otp, timeout=600)
 
         # send_mail(
         #     subject="Your OTP Code",
@@ -63,6 +62,7 @@ class RegisterView(CreateAPIView):
         print(f"OTP sent to {user.email}: {otp}")
 
         return Response(
+            #TODO:Remove OTP from response and active send_mail funcation in production
             {"message": "Account created. OTP sent to your email. Please verify.", "OTP": otp},
             status=status.HTTP_201_CREATED
         )
@@ -72,9 +72,7 @@ class RegisterView(CreateAPIView):
         return user
 
 class SendOTPView(APIView):
-    """
-    إرسال OTP إلى إيميل المستخدم
-    """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -82,13 +80,10 @@ class SendOTPView(APIView):
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # توليد كود OTP
         otp = random.randint(100000, 999999)
 
-        # نخزنه مؤقتًا في cache (مدته 5 دقائق)
-        cache.set(f"otp_{email}", otp, timeout=300)
+        cache.set(f"otp_{email}", otp, timeout=600)
 
-        # إرسال OTP على الإيميل
         # send_mail(
         #     subject="Your OTP Code",
         #     message=f"Your OTP code is {otp}",
@@ -97,6 +92,7 @@ class SendOTPView(APIView):
         #     fail_silently=False,
         # )
         print(f"OTP sent to {email}: {otp}")
+        #TODO:Remove OTP from response and active send_mail funcation in production
         return Response({"message": "OTP sent to email", "OTP": otp}, status=status.HTTP_200_OK)
 
 class VerifyOTPView(APIView):
@@ -377,3 +373,11 @@ class AddressViewSet(viewsets.ModelViewSet):
         address.is_default = True
         address.save()
         return Response({"status": "تم تعيين العنوان كافتراضي"}, status=status.HTTP_200_OK)
+
+class CheckLoginView(GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return Response({"status": "مستخدم مسجل الدخول"}, status=status.HTTP_200_OK)
+        return Response({"status": "مستخدم غير مسجل الدخول"}, status=status.HTTP_401_UNAUTHORIZED)

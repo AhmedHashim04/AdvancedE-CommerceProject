@@ -21,7 +21,6 @@ class CartListView(APIView):
         cart_summary = cart.get_cart_summary()
 
         return Response({
-            "auth": request.user.is_authenticated,
             "cart": cart.cart,
             "cart_summary": cart_summary
         }, status=status.HTTP_200_OK)

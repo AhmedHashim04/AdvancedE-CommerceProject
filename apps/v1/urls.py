@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
+    # TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
 )
@@ -23,17 +23,19 @@ router = DefaultRouter()
 # Add JWT  URLs / OAuth2 URLs
 from apps.accounts.views import RegisterView, LoginView, SendOTPView, VerifyOTPView, \
                                 PasswordChangeView, PasswordResetConfirmView, PasswordResetView, \
-                                AddressViewSet
+                                AddressViewSet, CheckLoginView
 
 
     # Register the AddressViewSet with the router
 router.register("addresses", AddressViewSet, basename="address")
+
 urlpatterns += [
+    path('check/', CheckLoginView.as_view(), name='check_login'),
     path('registration/', RegisterView.as_view(), name='registration'),
 
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
+    path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
      # URLs that do not require a session or valid token
@@ -41,7 +43,6 @@ urlpatterns += [
 
     path('password/reset/confirm/',PasswordResetConfirmView.as_view(),name='password_reset_confirm'),
 
-    path('login/', LoginView.as_view(), name='login'),
 
 
     # URLs that require a user to be logged in with a valid session / token.
@@ -119,7 +120,8 @@ urlpatterns += [
 
 # make shipping system
 # add payments system
-# make address create/destroy/edit 
+# make seller system
+# make address create/destroy/edit
 # link order system with payments and address system
 # make Notification system
 # add loyalty program
