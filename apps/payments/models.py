@@ -15,11 +15,6 @@ class PaymentMethod(models.TextChoices):
 
     CASH_ON_DELIVERY = "cod", _("Cash on Delivery")
 
-    INSTALLMENTS = "installments", _("Installments")
-    BNPL_VALU = "bnpl_valu", _("Buy Now Pay Later (valU)")
-    BNPL_TABBY = "bnpl_tabby", _("Buy Now Pay Later (Tabby)")
-
-
 class Payment(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),

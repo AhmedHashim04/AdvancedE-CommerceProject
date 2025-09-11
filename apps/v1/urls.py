@@ -118,11 +118,10 @@ router.register('seller-payouts', PayoutViewSet, basename='seller_payout')
 urlpatterns += [
     path("", include(router.urls)),
 ]
-
 # make shipping system
 # add payments system
 # make seller system
-# make address create/destroy/edit
+# Make Advertisement system
 # link order system with payments and address system
 # make Notification system
 # add loyalty program
