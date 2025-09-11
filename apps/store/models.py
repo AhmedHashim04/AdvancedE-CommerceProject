@@ -96,6 +96,9 @@ class Product(SEOFieldsMixin, models.Model):
     description = models.TextField()
     short_description = models.CharField(max_length=255, blank=True)
 
+    sku = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text=_("Stock Keeping Unit: unique identifier for the product"))
+    barcode = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text=_("Barcode: unique product code for scanning and inventory"))
+
     brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, related_name="products")
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
@@ -125,7 +128,8 @@ class Product(SEOFieldsMixin, models.Model):
     attributes = models.JSONField(blank=True, null=True)
     color_options = models.ManyToManyField('ProductColor', blank=True)
 
-
+    rating = models.PositiveIntegerField(verbose_name="Average Rating", default=0, max_length=1, blank=True, null=True)
+    review_count = models.PositiveIntegerField(verbose_name="Review Count", default=0, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -166,3 +170,9 @@ class Product(SEOFieldsMixin, models.Model):
         if self.promotion :
             price = self.promotion.apply_discount(price)
         return price
+
+    def update_rating(self):
+        self.rating = int(self.reviews.aggregate(models.Avg('rating'))['rating__avg'] or 0)
+        self.review_count += 1 
+
+        self.save(update_fields=['rating', 'review_count'])

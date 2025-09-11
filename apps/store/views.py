@@ -33,12 +33,11 @@ class ProductListView(generics.ListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['fields'] = ["id", "name", "slug", "short_description", "description",
-            "brand", "category", "tags", "color_options",
-            "main_image", "gallery", "stock",
-            "pricing", "promotion",
-            "attributes", "is_featured", "seo",
-            "created_at", "updated_at"
+        context['fields'] = [
+            "id", "name", "slug", "short_description",  'brand', 'category', 'tags',
+            "main_image", "pricing", "promotion", "currency","stock_quantity",
+            'allow_backorder', 'attributes',
+            "rating", "review_count", "is_featured"
         ]
         return context
 
@@ -54,7 +53,7 @@ class ProductListView(generics.ListAPIView):
             'base_price','promotion','currency', 
             'stock_quantity',
             'allow_backorder', 
-            'main_image', 'gallery',
+            'main_image',
             'attributes', 'is_featured',
 
         )
@@ -86,16 +85,18 @@ class ProductDetailView(generics.RetrieveAPIView):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['fields'] = [
-            'id', 'name', 'slug', 'description', #'sku','barcode', 
-            'base_price', 'final_price','promotion',  'currency', 
-            'category', 'brand',
-            'stock_quantity',
-            'allow_backorder', 'main_image', 'video_url', 'view_360_url',
-            'weight', 'width', 'height', 'depth',
-            'meta_title', 'meta_description', 'meta_keywords',
-            'has_variants', 'attributes', 'is_featured',
-            'views_count', 'sales_count']
+        context['fields'] = ["id", "name", "slug",
+            "short_description", "description",
+            "sku", "barcode", "brand", "category", "tags",
+            "color_options", "attributes", "has_variants",
+            "main_image", "gallery", "video_url", "view_360_url",
+            "weight", "width", "height", "depth",
+            "stock", "stock_quantity", "allow_backorder",
+            "base_price", "pricing", "promotion", "currency",
+            "rating", "review_count", "reviews",
+            "is_featured",
+            "meta_title", "meta_description", "meta_keywords", "seo",
+            ]
         return context
 
     def get_queryset(self):
@@ -145,7 +146,8 @@ class ProductDetailView(generics.RetrieveAPIView):
             Product.objects.filter(category=product.category,is_active=True,)
             .exclude(id=product.id)
             .select_related('category'
-                ).values('id','category__name', 'name', 'slug', 'main_image',
+                ).values('id','category__name', 'name', 'slug', 'main_image','promotion', 'currency', 
+
                 "base_price","currency",)
             [:max_related]
         )
