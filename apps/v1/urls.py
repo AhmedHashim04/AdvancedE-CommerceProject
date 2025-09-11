@@ -67,7 +67,7 @@ urlpatterns += [
     path("wishlist/", WishlistListView.as_view(), name="wishlist-list"),
     path("wishlist/add/", WishlistAddView.as_view(), name="wishlist-add"),
     path("wishlist/remove/", WishlistRemoveView.as_view(), name="wishlist-remove"),
-    
+
 ]
 
 from apps.reviews.views import ReviewCreateView, ReviewDestroyView, ReviewUpdateView

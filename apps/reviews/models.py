@@ -38,6 +38,7 @@ class Review(models.Model):
         identifier = self.user.email if self.user else self.ip_address
         return f"{identifier} - {self.product.name} ({self.rating}/5)"
 
-    def save(self):
+    def save(self, *args, **kwargs):
+        # logic بتاعتك هنا
         self.product.update_rating()
-        return super().save()
+        super().save(*args, **kwargs)

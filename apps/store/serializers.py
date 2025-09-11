@@ -11,10 +11,7 @@ from apps.promotions.models import Promotion
 # Utility: Dynamic Fields
 # --------------------------
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
-    """
-    Serializer يسمح بتحديد الـ fields اللي هتتعرض
-    من خلال تمرير context={"fields": [...]} من الـ view.
-    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         fields = self.context.get("fields", None)

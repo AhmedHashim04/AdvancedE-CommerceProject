@@ -5,6 +5,7 @@ from .models import Review
 from .serializers import ReviewSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 from core.utils import get_client_ip
 from core.utils import EmptySerializer
 
@@ -38,41 +39,47 @@ class ReviewCreateView(generics.CreateAPIView):
                 return Response("You have already reviewed this product")
             serializer.save(ip_address = get_client_ip(self.request), product=product)
     
-class ReviewDestroyView(APIView):
+class ReviewDestroyView(generics.DestroyAPIView):
     serializer_class = EmptySerializer
-
-    def get(self, request, *args, **kwargs):
+    permission_classes = [permissions.AllowAny]
+    def get_object(self):
         slug = self.kwargs.get("slug")
         product = get_object_or_404(Product, slug=slug)
         if self.request.user.is_authenticated:
-            if Review.objects.filter(user=self.request.user, product=product).exists():
-                Review.objects.filter(user=self.request.user, product=product).delete()
-            else:
-                return Response({"status": "you have not reviewed this product"})
-        else:
-            if Review.objects.filter(ip_address = get_client_ip(self.request), product=product).exists():
-                Review.objects.filter(ip_address = get_client_ip(self.request), product=product).delete()
-            else:
-                return Response({"status": "you have not reviewed this product"})
+            review = Review.objects.filter(user=self.request.user, product=product).first()
+            if not review:
+                raise NotFound(detail="You have not reviewed this product")
+            return review
+        review = Review.objects.filter(ip_address=get_client_ip(self.request), product=product).first()
+        if not review:
+            raise NotFound(detail="You have not reviewed this product")
+        return review
 
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.delete()
         return Response({"status": "removed"})
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
 
 class ReviewUpdateView(generics.UpdateAPIView):
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_object(self):
         slug = self.kwargs.get("slug")
         product = get_object_or_404(Product, slug=slug)
         if self.request.user.is_authenticated:
-            return get_object_or_404(Review, user=self.request.user, product=product)
-        return get_object_or_404(Review, ip_address=get_client_ip(self.request), product=product)
+            review = Review.objects.filter(user=self.request.user, product=product).first()
+            if not review:
+                raise NotFound(detail="You have not reviewed this product")
+            return review
+        review = Review.objects.filter(ip_address=get_client_ip(self.request), product=product).first()
+        if not review:
+            raise NotFound(detail="You have not reviewed this product")
+        return review
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

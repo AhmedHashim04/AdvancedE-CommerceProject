@@ -137,7 +137,8 @@ class ProductDetailView(generics.RetrieveAPIView):
 
 
         return Response(data)
-
+    
+#TODO Enhance Branches Products Srializers
     def get_related_products_context(self, product):
         max_related = self.max_related_products
         excluded_ids = {product.id}
@@ -205,58 +206,33 @@ class WishlistListView(generics.ListAPIView):
         return self.request.user.wishlist.all()
 
 from core.utils import EmptySerializer
+
 class WishlistAddView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EmptySerializer
 
-    def post(self, request):
-        try:
-            product_slug = request.data.get("product_slug")
-            product = get_object_or_404(Product, slug=product_slug)
-            if product in request.user.wishlist.all():
-                return Response({"status": "already in wishlist"}, status=status.HTTP_400_BAD_REQUEST)
-            request.user.wishlist.add(product)
-            
-            return Response({"status": "added"})
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, *args, **kwargs):
+        product_slug = request.data.get("product_slug")
+        print(product_slug)
+        if not product_slug:
+            return Response({"error": "product_slug is required"}, status=status.HTTP_400_BAD_REQUEST)
+        product = get_object_or_404(Product, slug=product_slug)
+        wishlist = request.user.wishlist
+        if product in wishlist.all():
+            return Response({"status": "already in wishlist"}, status=status.HTTP_200_OK)
+        wishlist.add(product)
+        return Response({"status": "added"}, status=status.HTTP_201_CREATED)
 
 class WishlistRemoveView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EmptySerializer
-
-    def post(self, request):
-        try:
-            product_slug = request.data.get("product_slug")
-            
-            product = get_object_or_404(Product, slug=product_slug)
-            if product not in request.user.wishlist.all():
-                return Response({"status": "not in wishlist"}, status=status.HTTP_400_BAD_REQUEST)
-            request.user.wishlist.remove(product)
-            
-            return Response({"status": "removed"})
-        
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class WishlistViewSet(viewsets.ViewSet):
-#     permission_classes = [IsAuthenticated]
-
-#     def list(self, request):
-#         products = request.user.wishlist.all()
-#         serializer = ProductSerializer(products, many=True)
-#         return Response(serializer.data)
-
-#     @action(detail=True, methods=["post"])
-#     def toggle(self, request, pk=None):
-#         product = get_object_or_404(Product, pk=pk)
-#         wishlist = request.user.wishlist
-#         if product in wishlist.all():
-#             wishlist.remove(product)
-#             return Response({"status": "removed"})
-#         else:
-#             wishlist.add(product)
-#             return Response({"status": "added"})
-
-
+    def post(self, request, *args, **kwargs):
+        product_slug = request.data.get("product_slug")
+        if not product_slug:
+            return Response({"error": "product_slug is required"}, status=status.HTTP_400_BAD_REQUEST)
+        product = get_object_or_404(Product, slug=product_slug)
+        wishlist = request.user.wishlist
+        if product not in wishlist.all():
+            return Response({"status": "not in wishlist"}, status=status.HTTP_200_OK)
+        wishlist.remove(product)
+        return Response({"status": "removed"}, status=status.HTTP_200_OK)
