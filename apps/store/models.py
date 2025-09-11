@@ -67,7 +67,7 @@ class ProductImage(models.Model):
     alt_text = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return "A"
+        return self.alt_text
 
 
 # -------------------------------------
@@ -111,7 +111,7 @@ class Product(SEOFieldsMixin, models.Model):
     allow_backorder = models.BooleanField(default=False)
 
     main_image = models.ImageField(upload_to="products/main_images/", blank=True, null=True)
-    gallery = models.ForeignKey(ProductImage, on_delete=models.CASCADE, blank=True, null=True, related_name="product_gallery")
+    gallery = models.ManyToManyField(ProductImage, blank=True, related_name="product_gallery")
     video_url = models.URLField(blank=True, null=True)
     view_360_url = models.URLField(blank=True, null=True)
 

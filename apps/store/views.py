@@ -33,13 +33,13 @@ class ProductListView(generics.ListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['fields'] = ['name', 'slug',  'short_description',
-            'brand', 'category', 'tags',
-            'base_price', 'final_price','promotion',  'currency', 
-            'stock_quantity',
-            'allow_backorder', 
-            'main_image', 'gallery',
-            'attributes', 'is_featured',]
+        context['fields'] = ["id", "name", "slug", "short_description", "description",
+            "brand", "category", "tags", "color_options",
+            "main_image", "gallery", "stock",
+            "pricing", "promotion",
+            "attributes", "is_featured", "seo",
+            "created_at", "updated_at"
+        ]
         return context
 
     def get_queryset(self):
