@@ -70,10 +70,11 @@ urlpatterns += [
     
 ]
 
-from apps.reviews.views import ReviewCreateView, ReviewDestroyView
+from apps.reviews.views import ReviewCreateView, ReviewDestroyView, ReviewUpdateView
 urlpatterns += [
     path("<slug:slug>/reviews/add/", ReviewCreateView.as_view(), name="review-add"),
     path("<slug:slug>/reviews/remove/", ReviewDestroyView.as_view(), name="review-remove"),
+    path("<slug:slug>/reviews/update/", ReviewUpdateView.as_view(), name="review-update"),
 
 ]
 

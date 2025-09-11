@@ -4,6 +4,7 @@ from django.core.cache import cache
 import hashlib
 from rest_framework import serializers
 from .models import Product, Brand, Category, Tag, ProductColor, ProductImage
+from apps.reviews.serializers import ReviewSerializer
 from apps.promotions.models import Promotion
 
 class PromotionSerializer(serializers.ModelSerializer):
@@ -45,6 +46,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ["id", "image", "alt_text"]
 
+
 class DynamicFieldsProductSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -68,7 +70,7 @@ class ProductSerializer(DynamicFieldsProductSerializer):
     gallery = ProductImageSerializer(many=True, read_only=True)
     pricing = serializers.SerializerMethodField()
     stock = serializers.SerializerMethodField()
-    # reviews = serializers.SerializerMethodField()
+    reviews = ReviewSerializer(many=True, read_only=True)
 
     seo = serializers.SerializerMethodField()
     promotion = PromotionSerializer(read_only=True)

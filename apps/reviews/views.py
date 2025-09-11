@@ -64,5 +64,15 @@ class ReviewDestroyView(APIView):
         else:
             ip = request.META.get("REMOTE_ADDR")
         return ip
-        
+
+class ReviewUpdateView(generics.UpdateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        slug = self.kwargs.get("slug")
+        product = get_object_or_404(Product, slug=slug)
+        if self.request.user.is_authenticated:
+            return get_object_or_404(Review, user=self.request.user, product=product)
+        return get_object_or_404(Review, ip_address=get_client_ip(self.request), product=product)
 
