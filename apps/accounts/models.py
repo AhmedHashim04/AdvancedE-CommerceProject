@@ -6,7 +6,8 @@ from django.contrib.auth.models import  PermissionsMixin
 import json
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.mail import send_mail
-from .utils import COUNTRY_CHOICES, CustomUserManager
+from .utils import CustomUserManager
+from core.utils import COUNTRY_CHOICES
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):

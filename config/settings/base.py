@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "apps.sellers",
     "apps.promotions",
     "apps.notifications",
-    
+    "apps.shipping",
 
     "drf_spectacular",
     "drf_spectacular_sidecar",
