@@ -1,7 +1,8 @@
 from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
-from apps.sellers.models import Seller, ShippingSystem
+from apps.sellers.models import Seller
+from apps.shipping.models import ShippingPlan
 from apps.promotions.models import Promotion
 
 from django.utils.translation import gettext_lazy as _
@@ -95,7 +96,7 @@ class Product(SEOFieldsMixin, models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     short_description = models.CharField(max_length=255, blank=True)
-
+    shipping_plan = models.ForeignKey(ShippingPlan, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="خطة الشحن المخصصة")
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text=_("Stock Keeping Unit: unique identifier for the product"))
     barcode = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text=_("Barcode: unique product code for scanning and inventory"))
 
@@ -163,6 +164,11 @@ class Product(SEOFieldsMixin, models.Model):
     def __str__(self):
         return self.name
 
+    def get_shipping_plan(self):
+        if self.shipping_plan:
+            return self.shipping_plan
+        return self.seller.default_shipping_company.plans.first()
+    
     @property
     def final_price(self):
         price = self.base_price
