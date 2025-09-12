@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 
-from .models import Seller, BankAccount, TaxInfo, Payout
+from .models import Seller, BankAccount, Payout
 from apps.store.models import Product
 from apps.orders.models import Order
 from apps.sellers.serializers import (
-    SellerSerializer, BankAccountSerializer, TaxInfoSerializer, 
+    SellerSerializer, BankAccountSerializer, 
     PayoutSerializer)
 from apps.store.serializers import ProductSerializer
 from apps.orders.serializers import OrderSerializer
@@ -65,17 +65,6 @@ class BankAccountViewSet(viewsets.ModelViewSet):
         seller = get_object_or_404(Seller, user=self.request.user)
         serializer.save(seller=seller)
 
-
-class TaxInfoViewSet(viewsets.ModelViewSet):
-    serializer_class = TaxInfoSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return TaxInfo.objects.filter(seller__user=self.request.user)
-
-    def perform_create(self, serializer):
-        seller = get_object_or_404(Seller, user=self.request.user)
-        serializer.save(seller=seller)
 
 
 class ProductViewSet(viewsets.ModelViewSet):

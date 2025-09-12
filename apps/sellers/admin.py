@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Seller, BankAccount, TaxInfo, Payout
+from .models import Seller, BankAccount, Payout 
 
 
 class BankAccountInline(admin.StackedInline):
@@ -8,11 +8,6 @@ class BankAccountInline(admin.StackedInline):
     can_delete = False
 
 
-class TaxInfoInline(admin.StackedInline):
-    model = TaxInfo
-    extra = 0
-    can_delete = False
-
 
 @admin.register(Seller)
 class SellerAdmin(admin.ModelAdmin):
@@ -20,7 +15,7 @@ class SellerAdmin(admin.ModelAdmin):
     list_filter = ("is_verified", "created_at")
     search_fields = ("store_name", "user__username", "phone")
     date_hierarchy = "created_at"
-    inlines = [BankAccountInline, TaxInfoInline]
+    inlines = [BankAccountInline]
     ordering = ("-created_at",)
 
     actions = ["mark_verified"]
@@ -48,9 +43,3 @@ class BankAccountAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
 
 
-@admin.register(TaxInfo)
-class TaxInfoAdmin(admin.ModelAdmin):
-    list_display = ("seller", "tax_id", "verified")
-    list_filter = ("verified",)
-    search_fields = ("seller__store_name", "tax_id")
-    ordering = ("-id",)

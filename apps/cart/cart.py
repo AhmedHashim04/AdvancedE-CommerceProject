@@ -91,17 +91,14 @@ class ShoppingCart:
         gift_price = base_price
         
         if item["promotion"] == "disactivated":
-            print(f"Promotion is deactivated.. : {gift_price}")
 
             return gift_price
         
         if promo := self.get_promotion(product):
-            print(f"Promotion is activated.. : {gift_price}")
             if promo.get("can_apply"):
                 gift_price += Decimal(promo.get("total_gift_price", 0))
 
-        total_with_tax = gift_price
-        return str(total_with_tax)
+        return str(gift_price)
 
     def get_cart_summary(self):
         total_items = sum(int(item["quantity"]) for item in self.cart.values())

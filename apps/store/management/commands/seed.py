@@ -78,7 +78,6 @@ class Command(BaseCommand):
                 promotion=random.choice(Promotion.objects.all()) if Promotion.objects.exists() else None,
                 base_price=round(random.uniform(100, 1000), 2),
                 cost_price=round(random.uniform(50, 500), 2),
-                # tax_rate=random.choice([0, 5, 10, 15]),
                 stock_quantity=random.randint(0, 50),
                 low_stock_threshold=5,
                 is_active=True,

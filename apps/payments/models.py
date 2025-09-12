@@ -4,11 +4,10 @@ from apps.orders.models import Order
 from django.utils.translation import gettext_lazy as _
 
 class PaymentMethod(models.TextChoices):
-    VISA = "visa", _("Visa")
-    MASTERCARD = "mastercard", _("MasterCard")
-    AMEX = "amex", _("American Express")
+    FAWRY = "fawry", _("Fawry")
+    PAYMOB = "paymob", _("Paymob")
     MEEZA = "meeza", _("Meeza")
-
+    MASTERCARD = "mastercard", _("MasterCard")
     APPLE_PAY = "apple_pay", _("Apple Pay")
     GOOGLE_PAY = "google_pay", _("Google Pay")
     PAYPAL = "paypal", _("PayPal")

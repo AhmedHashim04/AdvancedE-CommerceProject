@@ -6,7 +6,7 @@ from apps.shipping.models import ShippingSystem
 
 class Seller(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.CASCADE, blank=True, null=True)
+    # shipping_system = models.OneToOneField(ShippingSystem, on_delete=models.CASCADE, blank=True, null=True)
     store_name = models.CharField(max_length=150, unique=True)
     phone = models.CharField(max_length=20)
     address = models.ForeignKey(Address, verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
@@ -35,24 +35,6 @@ class BankAccount(models.Model):
     def __str__(self):
         return f"{self.bank_name} - {self.iban}"
 
-class TaxInfo(models.Model):
-    seller = models.OneToOneField(Seller, on_delete=models.CASCADE, related_name="tax_info")
-    tax_id = models.CharField(max_length=50, unique=True)  # الرقم الضريبي / VAT
-    document = models.FileField(upload_to="tax_docs/")
-    verified = models.BooleanField(default=False)
-    verified_at = models.DateTimeField(blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        if self.verified:
-            self.verified_at = models.DateTimeField(auto_now_add=True)
-        super().save(*args, **kwargs)
-
-    class Meta:
-        verbose_name = _("Tax Info")
-        verbose_name_plural = _("Tax Infos")
-
-    def __str__(self):
-        return self.tax_id
 
 class Payout(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="payouts")

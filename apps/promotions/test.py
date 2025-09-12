@@ -104,16 +104,11 @@ class BQGPromotion(BasePromotion):
 
         return max(price, Decimal("0")).quantize(DECIMAL_PRECISION)
 
-    @property
-    def discounted_gift_price_with_tax(self) -> Decimal:
-        """Gift price after discount + tax"""
-        price = self.discounted_gift_price
-        return price
 
     @property
     def total_gift_price(self) -> Decimal:
-        """Total price of all gift items after applying discounts and tax."""
-        return self.discounted_gift_price_with_tax
+        """Total price of all gift items after applying discounts."""
+        return self.discounted_gift_price
     
     def summary(self, bought_qty: int) -> dict:
         """

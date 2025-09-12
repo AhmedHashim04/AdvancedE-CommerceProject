@@ -47,8 +47,9 @@ class Address(models.Model):
     phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
     alternate_phone = models.CharField(max_length=11,blank=True,help_text=_("Alternate Phone Number (optional)"),
                                        verbose_name=_("Alternate Phone Number (optional)"),)
-    country = models.CharField(max_length=100, choices=COUNTRY_CHOICES,help_text=_("Country"),verbose_name=_("Country"))
-    state = models.CharField(max_length=100,help_text=_("State or City (optional)"),verbose_name=_("State or City"),blank=True, null=True)
+    # country = models.CharField(max_length=100, choices=COUNTRY_CHOICES,help_text=_("Country"),verbose_name=_("Country"))
+    placement = models.ForeignKey("Placement", on_delete=models.CASCADE, help_text=_("Select your placement"), verbose_name=_("Placement"))
+    city = models.CharField(max_length=100,help_text=_("City (optional)"),verbose_name=_("City"),blank=True, null=True)
     village = models.CharField(max_length=100,help_text=_("Village (optional)"),verbose_name=_("Village"),blank=True, null=True)
     address_line1 = models.CharField(max_length=255, verbose_name=_("Address Line 1"),help_text=_("Write detailed address that you want to deliver the order "))
     postal_code = models.CharField(max_length=20,help_text=_("you can leave it empty if you don't know what postal code"), verbose_name=_("Postal Code"))

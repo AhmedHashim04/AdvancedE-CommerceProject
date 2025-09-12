@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Seller, BankAccount, TaxInfo, Payout
+from .models import Seller, BankAccount, Payout
 from apps.store.models import Product
 from apps.orders.models import Order
 
@@ -28,15 +28,6 @@ class BankAccountSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "seller", "created_at"]
 
 
-class TaxInfoSerializer(serializers.ModelSerializer):
-    seller = serializers.StringRelatedField(read_only=True)
-
-    class Meta:
-        model = TaxInfo
-        fields = [
-            "id", "seller", "tax_id", "document", "verified"
-        ]
-        read_only_fields = ["id", "seller", "verified"]
 
 
 class PayoutSerializer(serializers.ModelSerializer):
