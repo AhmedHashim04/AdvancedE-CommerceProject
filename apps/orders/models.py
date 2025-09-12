@@ -22,7 +22,7 @@ class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="orders", verbose_name=_("User"))
     ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
 
-    address = models.ForeignKey("accounts.Address", on_delete=models.PROTECT, related_name="orders", verbose_name=_("Address"))
+    address = models.ForeignKey("shipping.Address", on_delete=models.PROTECT, related_name="orders", verbose_name=_("Address"))
 
     notes = models.TextField(blank=True, null=True, verbose_name=_("Additional Notes"))
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, verbose_name=_("Status"))

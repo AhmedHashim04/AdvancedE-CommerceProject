@@ -1,7 +1,9 @@
 # 🛒 Advanced Ecommerce System
+A powerful, scalable ecommerce platform built with Django, designed for multi-seller marketplaces. Each seller can register, manage their own dedicated dashboard, and access personalized tools for products, orders, shipping, and analytics. The system supports multi-shipping company integration, enabling sellers to offer various delivery options with flexible pricing, regions, and timeframes. Customers can select the shipping plan that suits them, with automatic cost adjustments for excess weight.
 
-A powerful, scalable ecommerce platform built with Django, designed for merchants and customers with advanced features, secure payments, and real-time operations.
+The platform features advanced coupon and discount systems, multiple payment methods, product reviews and ratings, auto-generated order forms, and real-time notifications for customers, sellers, and shipping companies. Sellers can enable multiple shipping providers, set custom shipping plans, and define pricing rules based on region, weight, and delivery time. Customers benefit from a seamless shopping experience, choosing the best shipping and payment options, applying coupons, and leaving reviews.
 
+Additionally, the system includes an advertisements module, allowing sellers to promote products through banners and ads for increased visibility and sales.
 ---
 
 ## 🚀 Technologies Used
@@ -20,6 +22,18 @@ A powerful, scalable ecommerce platform built with Django, designed for merchant
 
 ## 🎯 Key Features
 
+### 🧾 Multi-Seller Marketplace
+- Sellers register and manage their own dashboard
+- Personalized management for products, orders, shipping, and analytics
+- Seller-specific notifications and statistics
+
+### 🚚 Multi-Shipping Company Integration
+- Sellers can enable multiple shipping companies
+- Custom shipping plans: flexible pricing, regions, delivery times
+- Automatic cost calculation for excess weight
+- Customers choose preferred shipping plan during checkout
+- Real-time notifications for shipping companies
+
 ### 🧾 Product & Category Management
 - Merchants register, manage products, assign tags, categories, brands
 - Inventory control with low stock alerts
@@ -33,22 +47,26 @@ A powerful, scalable ecommerce platform built with Django, designed for merchant
 
 ### 🛍️ Shopping Cart & Order Management
 - Add/remove products, manage cart
-- Order form generation, order tracking (Processing → Shipped → Delivered)
+- Auto-generated order forms for each product
+- Order tracking (Processing → Shipped → Delivered)
 - PDF invoice generation
 
 ### 💳 Secure Payments
 - VISA, MasterCard, AMEX, Meeza, Apple Pay, Google Pay, PayPal, Cash on Delivery
+- Multiple payment gateways for flexibility
 
 ### 🧵 Promotions & Coupons
-- Percentage, fixed, buy X get Y, shipping, collection-based discounts
+- Advanced coupon system: percentage, fixed, buy X get Y, shipping, collection-based discounts
 - Usage limits, bulk discount codes
-- Comprehensive coupon system
+- Shipping coupons and region-based discounts
 
 ### 💚 Wishlist System
 - Save favorite products for later
 
 ### 💬 Product Reviews & Ratings
-- Customer feedback, ratings, review moderation
+- Customers can leave reviews and ratings on products
+- Review moderation by sellers
+- Ratings displayed on product pages
 
 ### 👤 User Profiles
 - Multi-address support
@@ -61,6 +79,7 @@ A powerful, scalable ecommerce platform built with Django, designed for merchant
 ### 📦 Region-Based Shipping
 - Shipping cost calculations by region
 - Shipping weight calculations
+- Sellers define shipping zones and pricing
 
 ### 📢 Advertisements System
 - Promote products with banners and ads
@@ -84,9 +103,10 @@ A powerful, scalable ecommerce platform built with Django, designed for merchant
 - Pytest-based test coverage
 - Background tasks (order notifications, email, etc.) via Celery & Redis
 
-### 💌 Notifications
-- Real-time order updates, low stock alerts
-- Email notifications (orders, password resets, promotions)
+### 💌 Real-Time Notifications
+- Instant updates for customers, sellers, and shipping companies
+- Order status changes, low stock alerts, promotions, and more
+- Email notifications for orders, password resets, and marketing
 
 ---
 

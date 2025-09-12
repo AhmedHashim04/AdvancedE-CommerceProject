@@ -39,37 +39,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-class Address(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,
-                             related_name='addresses',blank=True,null=True,verbose_name=_("User")) # for Guest checkout
-    ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
-    full_name = models.CharField(max_length=255, verbose_name=_("Full Name"),help_text=_("Full Name"))
-    phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
-    alternate_phone = models.CharField(max_length=11,blank=True,help_text=_("Alternate Phone Number (optional)"),
-                                       verbose_name=_("Alternate Phone Number (optional)"),)
-    # country = models.CharField(max_length=100, choices=COUNTRY_CHOICES,help_text=_("Country"),verbose_name=_("Country"))
-    placement = models.ForeignKey("Placement", on_delete=models.CASCADE, help_text=_("Select your placement"), verbose_name=_("Placement"))
-    city = models.CharField(max_length=100,help_text=_("City (optional)"),verbose_name=_("City"),blank=True, null=True)
-    village = models.CharField(max_length=100,help_text=_("Village (optional)"),verbose_name=_("Village"),blank=True, null=True)
-    address_line1 = models.CharField(max_length=255, verbose_name=_("Address Line 1"),help_text=_("Write detailed address that you want to deliver the order "))
-    postal_code = models.CharField(max_length=20,help_text=_("you can leave it empty if you don't know what postal code"), verbose_name=_("Postal Code"))
-    is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name_plural = 'Addresses'
-        ordering = ['-is_default', '-created_at']
-
-    def __str__(self):
-        return f"{self.full_name} - {self.address_line1}, {self.state}"
-
-    def save(self, *args, **kwargs):
-        if self.is_default:
-            Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
-        super().save(*args, **kwargs)
-
-
 class UserActivityLog(models.Model):
 
     ACTION_CHOICES = [

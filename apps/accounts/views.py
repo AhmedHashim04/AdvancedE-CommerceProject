@@ -15,7 +15,7 @@ from rest_framework import viewsets, status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, LoginSerializer, AddressSerializer
-from .models import Address
+from apps.shipping.models import Address
 
 from dj_rest_auth.app_settings import api_settings
 from dj_rest_auth.models import TokenModel

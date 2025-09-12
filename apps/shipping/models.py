@@ -2,6 +2,37 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.orders.models import Order, OrderItem
 from apps.sellers.models import Seller
+from django.conf import settings
+import uuid
+
+
+class Address(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,
+                             related_name='addresses',blank=True,null=True,verbose_name=_("User")) # for Guest checkout
+    ip_address = models.GenericIPAddressField(verbose_name=_("IP Address"), blank=True, null=True)
+    full_name = models.CharField(max_length=255, verbose_name=_("Full Name"),help_text=_("Full Name"))
+    phone_number = models.CharField(max_length=20,help_text=_("Primary Phone Number"), verbose_name=_("Phone Number"))
+    alternate_phone = models.CharField(max_length=11,blank=True,help_text=_("Alternate Phone Number (optional)"),
+                                       verbose_name=_("Alternate Phone Number (optional)"),)
+    governorate = models.ForeignKey("Governorate", on_delete=models.CASCADE, verbose_name=_("Governorate"))
+    city = models.ForeignKey("City", on_delete=models.CASCADE, verbose_name=_("City"))
+    village = models.CharField(max_length=100,help_text=_("Village (optional if you from city center) "),verbose_name=_("Village"),blank=True, null=True)
+    detailed_address = models.CharField(max_length=255, verbose_name=_("Detailed Address "),help_text=_("Write detailed address that you want to deliver the order "))
+    postal_code = models.CharField(max_length=20,help_text=_("you can leave it empty if you don't know what postal code"), verbose_name=_("Postal Code"))
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Addresses'
+        ordering = ['-is_default', '-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} - {self.detailed_address}, {self.city}"
+
+
+
+
 
 class Governorate(models.Model):
     name_ar = models.CharField(max_length=100, verbose_name=_("Governorate Name (Arabic)"))
@@ -30,8 +61,8 @@ class City(models.Model):
         return f"{self.name_ar} - {self.governorate.name_ar}"
 
 class ShippingCompany(models.Model):
-    name_ar = models.CharField(max_length=100, verbose_name=_("Shipping Company Name (Arabic)"))
-    name_en = models.CharField(max_length=100, verbose_name=_("Shipping Company Name (English)"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shipping_companies', verbose_name=_("User"))
+    name = models.CharField(max_length=100, verbose_name=_("Shipping Company Name"))
     logo = models.ImageField(upload_to='shipping_logos/', null=True, blank=True)
     is_active = models.BooleanField(default=True, verbose_name=_("Active"))
     created_at = models.DateTimeField(auto_now_add=True)
@@ -42,10 +73,10 @@ class ShippingCompany(models.Model):
     
     def __str__(self):
         return self.name_ar
+    
 class ShippingPlan(models.Model):
     company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE, related_name='plans')
-    governorate = models.ForeignKey(Governorate, on_delete=models.CASCADE, related_name='shipping_plans')
-    cities = models.ManyToManyField(City, blank=True, related_name='shipping_plans')
+    governorate = models.ManyToManyField(Governorate, related_name='shipping_plans')
     base_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Base Price"))
     estimated_days = models.PositiveIntegerField(verbose_name=_("Estimated Delivery Days"))
     is_active = models.BooleanField(default=True, verbose_name=_("Active"))
@@ -57,12 +88,12 @@ class ShippingPlan(models.Model):
     
     def __str__(self):
         return f"{self.company.name_ar} - {self.governorate.name_ar}"
-    
+        
 class WeightPricingTier(models.Model):
     plan = models.ForeignKey(ShippingPlan, on_delete=models.CASCADE, related_name='weight_tiers')
     min_weight = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Minimum Weight (kg)"))
     max_weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Maximum Weight (kg)"))
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price for Specified Weight"))
+    price_per_kilo = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price per Kilo (EGP)"))
 
     
     class Meta:
@@ -72,39 +103,37 @@ class WeightPricingTier(models.Model):
     
     def __str__(self):
         max_weight = self.max_weight or _("Above")
-        return f"{self.min_weight} - {max_weight} kg: {self.price} EGP"
+        return f"{self.min_weight} - {max_weight} kg: {self.price_per_kilo} EGP"
     
 
 
 class Shipment(models.Model):
     SHIPMENT_STATUS = (
-        ('pending', 'قيد الانتظار'),
-        ('processing', 'قيد المعالجة'),
-        ('in_transit', 'قيد التوصيل'),
-        ('delivered', 'تم التسليم'),
-        ('cancelled', 'ملغي'),
+        ('pending', 'Pending'),
+        ('in_transit', 'In Transit'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
     )
-    
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='shipments')
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
+    company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE)
     shipping_plan = models.ForeignKey(ShippingPlan, on_delete=models.CASCADE)
-    tracking_number = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    tracking_number = models.CharField(max_length=100, unique=True, blank=True)
     status = models.CharField(max_length=20, choices=SHIPMENT_STATUS, default='pending')
-    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="تكلفة الشحن")
-    estimated_delivery = models.DateField(null=True, blank=True, verbose_name="موعد التسليم المتوقع")
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Shipping Cost")
+    estimated_delivery = models.DateField(null=True, blank=True, verbose_name="Estimated Delivery Date")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        verbose_name = "شحنة"
-        verbose_name_plural = "الشحنات"
-    
+        verbose_name = "Shipment"
+        verbose_name_plural = "Shipments"
+
     def __str__(self):
-        return f"شحنة #{self.id} للطلب #{self.order.id}"
-    
+        return f"Shipment #{self.id} for Order #{self.order.id}"
+
     def save(self, *args, **kwargs):
         if not self.tracking_number:
-            # إنشاء رقم تتبع فريد
             self.tracking_number = f"TRK{self.id:08d}"
         super().save(*args, **kwargs)
 
@@ -113,9 +142,9 @@ class ShipmentItem(models.Model):
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
     
     class Meta:
-        verbose_name = "عنصر الشحنة"
-        verbose_name_plural = "عناصر الشحنة"
+        verbose_name = "Shipment Item"
+        verbose_name_plural = "Shipment Items"
         unique_together = ('shipment', 'order_item')
     
     def __str__(self):
-        return f"{self.order_item.product.name_ar} في الشحنة #{self.shipment.id}"
+        return f"{self.order_item.product.name} in Shipment #{self.shipment.id}"

@@ -10,6 +10,7 @@ class ShoppingCart:
         self.request = request
         self.session = request.session
         self.cart = self._get_cart_items()
+        self.sellers_shipping_costs = {}
 
     def _cache_key(self):
         if self.request.user.is_authenticated:
@@ -82,8 +83,8 @@ class ShoppingCart:
 
 
         self.cart[slug].update({"promotion": self.get_promotion(product)})
-
         self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], product))})
+        self.cart[slug].update({"shipping_plan": product.shipping_plans.first() if product.shipping_plans.exists() else None})
         self.save()
 
     def get_subtotal(self, item, product):
@@ -100,13 +101,60 @@ class ShoppingCart:
 
         return str(gift_price)
 
+    def calculate_tier_weight_shipping_cost(self, product, quantity):
+        item_weight_shipping_cost = Decimal('0.00')
+        if product.shipping_plans.exists():
+            plan = product.shipping_plans.first()
+            if plan.weight_tiers.exists():
+                tier = plan.weight_tiers.filter(min_weight__lte=product.weight).order_by('min_weight').last()
+                if tier:
+                    item_weight_shipping_cost = tier.price_per_kilo * product.weight * quantity
+        return item_weight_shipping_cost
+
+    def calculate_total_shipping_cost(self):
+        """
+        Calculate the total shipping cost for all items in the cart,
+        considering each seller's shipping plans and weight tiers.
+        """
+        total_shipping_cost = Decimal('0.00')
+        sellers_shipping_costs = {}
+        for slug, item in self.cart.items():
+            try:
+                product = Product.objects.get(slug=slug)
+            except Product.DoesNotExist:
+                continue
+            seller = product.seller
+            quantity = int(item["quantity"])
+            # Calculate shipping cost for this item
+            item_shipping_cost = self.calculate_tier_weight_shipping_cost(product, quantity)
+            # Track shipping cost per seller
+            if seller not in sellers_shipping_costs:
+                sellers_shipping_costs[seller] = {
+                    "base_price": Decimal('0.00'),
+                    "items_shipping_cost": Decimal('0.00')
+                }
+            # Add base price for the seller's shipping plan (once per seller)
+            if product.shipping_plans.exists():
+                plan = product.shipping_plans.first()
+                if sellers_shipping_costs[seller]["base_price"] == Decimal('0.00'):
+                    sellers_shipping_costs[seller]["base_price"] = plan.base_price
+            sellers_shipping_costs[seller]["items_shipping_cost"] += item_shipping_cost
+
+        # Sum up all sellers' shipping costs
+        for costs in sellers_shipping_costs.values():
+            total_shipping_cost += costs["base_price"] + costs["items_shipping_cost"]
+        return total_shipping_cost
+
     def get_cart_summary(self):
         total_items = sum(int(item["quantity"]) for item in self.cart.values())
         total_price = self.get_total_price()
+        shipping_cost = self.calculate_total_shipping_cost()
         return {
             "total_items": total_items,
             "total_price": str(total_price),
+            "shipping_cost": str(shipping_cost),
         }
+
 
     def remove(self, product: Product):
         slug = str(product.slug)

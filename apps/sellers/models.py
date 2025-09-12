@@ -1,13 +1,14 @@
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from apps.accounts.models import Address
-from apps.shipping.models import ShippingCompany
+from apps.shipping.models import ShippingCompany, Address
 
 class Seller(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     default_shipping_company = models.ForeignKey(ShippingCompany, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Default Shipping Company")
     store_name = models.CharField(max_length=150, unique=True)
+    store_description = models.TextField(blank=True, null=True)
+    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
     address = models.ForeignKey(Address, verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     is_verified = models.BooleanField(default=False)

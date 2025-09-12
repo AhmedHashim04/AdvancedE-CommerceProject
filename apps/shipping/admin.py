@@ -1,4 +1,9 @@
 from django.contrib import admin
-from .models import ShippingSystem
+from .models import Governorate, City, Address, ShippingCompany, ShippingPlan, Shipment
 
-admin.site.register(ShippingSystem)
+admin.site.register(Governorate)
+admin.site.register(City)
+admin.site.register(Address)
+admin.site.register(ShippingCompany)
+admin.site.register(ShippingPlan)
+admin.site.register(Shipment)
