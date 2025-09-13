@@ -100,6 +100,25 @@ class CartPromotionDeactivateView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class CartPromotionReactivateView(APIView):
+    """
+    Reactivate a promotion for a specific product in the cart
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, slug, *args, **kwargs):
+        product = get_object_or_404(Product, slug=slug)
+
+        cart = get_cart(request)
+        cart.reactive_promotion(product)
+
+        return Response({
+            "message": "Reactivated promotion for this product",
+            "cart": cart.cart,
+            "summary": cart.get_cart_summary()
+        }, status=status.HTTP_200_OK)
+
+
 
 # class CartChangeShippingPlanView(APIView):
 #     """

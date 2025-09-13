@@ -23,11 +23,10 @@ router = DefaultRouter()
 # Add JWT  URLs / OAuth2 URLs
 from apps.accounts.views import RegisterView, LoginView, SendOTPView, VerifyOTPView, \
                                 PasswordChangeView, PasswordResetConfirmView, PasswordResetView, \
-                                AddressViewSet, CheckLoginView
+                                 CheckLoginView
 
 
     # Register the AddressViewSet with the router
-router.register("addresses", AddressViewSet, basename="address")
 
 urlpatterns += [
     path('check/', CheckLoginView.as_view(), name='check_login'),
@@ -99,19 +98,14 @@ urlpatterns += [
 from rest_framework.routers import DefaultRouter
 from apps.sellers.views import (
     SellerViewSet,
-    BankAccountViewSet,
     ProductViewSet,
-    OrderViewSet,
-    PayoutViewSet,
 )
 
-
+from apps.shipping.views import AddressViewSet
+router.register("addresses", AddressViewSet, basename="address")
 
 router.register('sellers', SellerViewSet, basename='seller')
-router.register('sellers-bank-accounts', BankAccountViewSet, basename='bankaccount')
 router.register('seller-products', ProductViewSet, basename='seller_products')
-router.register('seller-orders', OrderViewSet, basename='seller_orders')
-router.register('seller-payouts', PayoutViewSet, basename='seller_payout')
 
 urlpatterns += [
     path("", include(router.urls)),

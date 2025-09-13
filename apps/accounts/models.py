@@ -33,7 +33,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         send_mail(subject, message, from_email, [self.email], **kwargs)
     
     email = models.EmailField(_("email address"), unique=True)
-    address = models.ForeignKey("Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
+    address = models.ForeignKey("shipping.Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     wishlist = models.ManyToManyField("store.Product",verbose_name=_("Wishlist"),blank=True)
 
     def __str__(self):

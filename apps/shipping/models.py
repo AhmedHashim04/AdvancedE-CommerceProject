@@ -1,9 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.orders.models import Order, OrderItem
-from apps.sellers.models import Seller
 from django.conf import settings
-import uuid
 
 
 class Address(models.Model):
@@ -84,7 +81,6 @@ class ShippingPlan(models.Model):
     class Meta:
         verbose_name = _("Shipping Plan")
         verbose_name_plural = _("Shipping Plans")
-        unique_together = ('company', 'governorate')
     
     def __str__(self):
         return f"{self.company.name_ar} - {self.governorate.name_ar}"
@@ -114,14 +110,21 @@ class Shipment(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     )
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='shipments')
-    seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
-    company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE)
-    shipping_plan = models.ForeignKey(ShippingPlan, on_delete=models.CASCADE)
+    order = models.ForeignKey("orders.Order", on_delete=models.CASCADE, related_name='shipments')
+
+    seller = models.ForeignKey("sellers.Seller", on_delete=models.CASCADE)
+    company = models.ForeignKey("shipping.ShippingCompany", on_delete=models.CASCADE)
+
+    shipping_plan = models.ForeignKey("shipping.ShippingPlan", on_delete=models.CASCADE)
+    customer_address = models.ForeignKey("shipping.Address", on_delete=models.CASCADE, related_name='shipments')
+
     tracking_number = models.CharField(max_length=100, unique=True, blank=True)
+
     status = models.CharField(max_length=20, choices=SHIPMENT_STATUS, default='pending')
+
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Shipping Cost")
     estimated_delivery = models.DateField(null=True, blank=True, verbose_name="Estimated Delivery Date")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -139,7 +142,10 @@ class Shipment(models.Model):
 
 class ShipmentItem(models.Model):
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='items')
-    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
+    order_item = models.ForeignKey("orders.OrderItem", on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    weight = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Weight (kg)")
+    volume = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Volume (cm³)", null=True, blank=True)
     
     class Meta:
         verbose_name = "Shipment Item"

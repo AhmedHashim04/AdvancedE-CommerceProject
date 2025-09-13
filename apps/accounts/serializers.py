@@ -1,7 +1,6 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
 
-from .models import Address
 
 from allauth.account.adapter import get_adapter
 from django.conf import settings
@@ -145,9 +144,3 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
-
-class AddressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Address
-        fields = "__all__"
-        read_only_fields = ("user", "ip_address", "created_at", "updated_at")

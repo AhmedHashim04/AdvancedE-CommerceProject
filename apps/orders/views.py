@@ -8,7 +8,7 @@ from decimal import Decimal
 from apps.cart.cart import ShoppingCart
 from apps.orders.models import Order, OrderItem, OrderStatus
 from apps.store.models import Product
-from apps.accounts.models import Address
+from apps.shipping.models import Address
 
 class OrderCreateView(CreateAPIView):
     permission_classes = [permissions.AllowAny]
@@ -125,6 +125,8 @@ class OrderCreateView(CreateAPIView):
                     total_price += (unit_gift_price - discount_gift_price) * gift_quantity
 
             order.total_price = total_price
+
+
             order.save()
             cart.clear()
 
