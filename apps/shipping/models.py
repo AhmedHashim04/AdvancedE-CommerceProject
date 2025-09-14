@@ -55,21 +55,26 @@ class City(models.Model):
         unique_together = ('governorate', 'code')
     
     def __str__(self):
-        return f"{self.name_ar} - {self.governorate.name_ar}"
+        return f"{self.name_ar} - {self.governorate.name_ar} "
 
 class ShippingCompany(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shipping_companies', verbose_name=_("User"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,unique=True, on_delete=models.CASCADE, related_name='shipping_companies', verbose_name=_("User"))
     name = models.CharField(max_length=100, verbose_name=_("Shipping Company Name"))
+    company_description = models.TextField(blank=True, null=True)
     logo = models.ImageField(upload_to='shipping_logos/', null=True, blank=True)
-    is_active = models.BooleanField(default=True, verbose_name=_("Active"))
+    address = models.ForeignKey("shipping.Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20)
+    is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         verbose_name = _("Shipping Company")
         verbose_name_plural = _("Shipping Companies")
     
     def __str__(self):
-        return self.name_ar
+        return self.name
     
 class ShippingPlan(models.Model):
     company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE, related_name='plans')
@@ -83,7 +88,7 @@ class ShippingPlan(models.Model):
         verbose_name_plural = _("Shipping Plans")
     
     def __str__(self):
-        return f"{self.company.name_ar} - {self.governorate.name_ar}"
+        return f"{self.company.name} - {self.governorate.name_ar}"
         
 class WeightPricingTier(models.Model):
     plan = models.ForeignKey(ShippingPlan, on_delete=models.CASCADE, related_name='weight_tiers')

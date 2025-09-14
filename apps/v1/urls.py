@@ -101,8 +101,15 @@ from apps.sellers.views import (
     ProductViewSet,
 )
 
-from apps.shipping.views import AddressViewSet
+from apps.shipping.views import AddressViewSet,ShippingPlanViewSet
 router.register("addresses", AddressViewSet, basename="address")
+router.register("shipping-plans", ShippingPlanViewSet, basename="shipping_plan")
+
+
+from apps.shipping.views import ShippingCompanyRequireView
+urlpatterns += [
+    path("shipping-companies/", ShippingCompanyRequireView.as_view(), name="shipping_company"),
+]
 
 router.register('sellers', SellerViewSet, basename='seller')
 router.register('seller-products', ProductViewSet, basename='seller_products')

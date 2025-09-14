@@ -1,11 +1,12 @@
-from .serializers import AddressSerializer
-from .models import Address
+from .serializers import AddressSerializer, ShippingCompanySerializer, ShippingPlanSerializer
+from .models import Address, ShippingCompany, ShippingPlan
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.utils import get_client_ip
 
+from rest_framework.generics import CreateAPIView
 # Create your views here.
 
 
@@ -39,3 +40,28 @@ class AddressViewSet(viewsets.ModelViewSet):
         address.is_default = True
         address.save()
         return Response({"status": "تم تعيين العنوان كافتراضي"}, status=status.HTTP_200_OK)
+
+class ShippingCompanyRequireView(CreateAPIView):
+    serializer_class = ShippingCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        if ShippingCompany.objects.filter(user=request.user).exists():
+            return Response({"error": "You have already submitted a request."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response({"status": "Request sent successfully. Please wait for approval."}, status=status.HTTP_201_CREATED)
+
+class ShippingPlanViewSet(viewsets.ModelViewSet):
+    serializer_class = ShippingPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ShippingPlan.objects.filter(company__user=self.request.user, company__is_verified=True)
+    
+    def perform_create(self, serializer):
+        company = ShippingCompany.objects.filter(user=self.request.user, is_verified=True).first()
+        if not company:
+            raise PermissionError("You must be a verified shipping company to create a shipping plan.")
+        serializer.save(company=company)
