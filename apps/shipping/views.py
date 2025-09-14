@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.utils import get_client_ip
 
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 # Create your views here.
 
 
@@ -41,7 +41,7 @@ class AddressViewSet(viewsets.ModelViewSet):
         address.save()
         return Response({"status": "تم تعيين العنوان كافتراضي"}, status=status.HTTP_200_OK)
 
-class ShippingCompanyRequireView(CreateAPIView):
+class ShippingCompanyRequireView(viewsets.ModelViewSet):
     serializer_class = ShippingCompanySerializer
     permission_classes = [IsAuthenticated]
 
@@ -53,12 +53,39 @@ class ShippingCompanyRequireView(CreateAPIView):
         serializer.save(user=request.user)
         return Response({"status": "Request sent successfully. Please wait for approval."}, status=status.HTTP_201_CREATED)
 
+    def list(self, request, *args, **kwargs):
+        return Response({"error": "You cannot view this."}, status=status.HTTP_403_FORBIDDEN)
+    
+    def retrieve(self, request, *args, **kwargs):
+        if ShippingCompany.objects.filter(user=request.user).exists():
+            instance = ShippingCompany.objects.get(user=request.user)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        return Response({"error": "You do not have a shipping company."}, status=status.HTTP_404_NOT_FOUND)
+    
+    def update(self, request, *args, **kwargs):
+        if ShippingCompany.objects.filter(user=request.user).exists():
+            instance = ShippingCompany.objects.get(user=request.user)
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            serializer.is_verified = False
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"status": "Request updated successfully. Please wait for approval."}, status=status.HTTP_200_OK)
+        return Response({"error": "You do not have a shipping company."}, status=status.HTTP_404_NOT_FOUND)
+
+    def destroy(self, request, *args, **kwargs):
+        if ShippingCompany.objects.filter(user=request.user).exists():
+            instance = ShippingCompany.objects.get(user=request.user)
+            instance.delete()
+            return Response({"status": "Shipping company deleted successfully."}, status=status.HTTP_200_OK)
+        return Response({"error": "You do not have a shipping company."}, status=status.HTTP_404_NOT_FOUND)
+
 class ShippingPlanViewSet(viewsets.ModelViewSet):
     serializer_class = ShippingPlanSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return ShippingPlan.objects.filter(company__user=self.request.user, company__is_verified=True)
+        return ShippingPlan.objects.filter(company__user=self.request.user, company__is_verified=True, is_active=True)
     
     def perform_create(self, serializer):
         company = ShippingCompany.objects.filter(user=self.request.user, is_verified=True).first()
