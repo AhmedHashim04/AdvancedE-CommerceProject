@@ -118,7 +118,6 @@ class BQGPromotion(BasePromotion):
         """
         can_apply = self.is_valid(bought_qty)
         summary_data = {
-            "type": "BQG",
             "gift": str(self.gift),
             "quantity_to_buy": self.quantity_to_buy,
             "gift_quantity": self.gift_quantity,
@@ -167,7 +166,10 @@ class PromotionType(models.TextChoices):
 
 class Promotion(BasePromotion):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    seller = models.ForeignKey(
+        "sellers.Seller", on_delete=models.CASCADE,
+        related_name="promotions"
+    )
     type = models.CharField(
         max_length=20,
         choices=PromotionType.choices,
@@ -282,6 +284,7 @@ class Promotion(BasePromotion):
 
 
     def summary(self, bought_qty: int) -> dict:
+
         base = {
             "id": str(self.id),
             "type": self.type,

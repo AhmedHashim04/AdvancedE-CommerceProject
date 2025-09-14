@@ -6,7 +6,8 @@ from .models import Seller
 from apps.store.models import Product
 from apps.sellers.serializers import SellerSerializer
 from apps.store.serializers import ProductSerializer
-
+from apps.sellers.serializers import PromotionSerializer
+from apps.promotions.models import Promotion
 
 
 class IsSellerOwner(permissions.BasePermission):
@@ -61,6 +62,21 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Product.objects.filter(seller__user=self.request.user)
 
+    def perform_create(self, serializer):
+        seller = get_object_or_404(Seller, user=self.request.user)
+        if promotion:= serializer.validated_data.get('promotion'):
+            if promotion.seller != seller:
+                return Response({"error": "Invalid promotion for this seller."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(seller=seller)
+        
+
+class AddPromotionViewSet(viewsets.ModelViewSet):
+    serializer_class = PromotionSerializer
+    permission_classes = [permissions.IsAuthenticated , IsSellerOwner]
+
+    def get_queryset(self):
+        seller = get_object_or_404(Seller, user=self.request.user)
+        return Promotion.objects.filter(seller=seller)
     def perform_create(self, serializer):
         seller = get_object_or_404(Seller, user=self.request.user)
         serializer.save(seller=seller)

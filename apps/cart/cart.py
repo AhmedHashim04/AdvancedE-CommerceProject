@@ -32,127 +32,66 @@ class ShoppingCart:
         cache.set(cache_key, self.cart, timeout=3600)
         self.session["cart"] = self.cart
         self.session.modified = True
-
-    def update(self, item, quantity):
-        current_qty = item["quantity"]
-        add_qty = min(quantity)
-        
-        #TODO : Make update handle the leakage and the provided quantities
-        # if add_qty > current_qty:
-        #     item["quantity"] = str(int(current_qty) + int(add_qty))
-        # elif add_qty < current_qty:
-        #     item["quantity"] = str(int(current_qty) - int(add_qty))
-
-        item["quantity"] = str(int(current_qty) + int(add_qty))
-    def get_promotion(self, product):
-
-        if promo := product.promotion:
-            promo_data = promo.summary(int(self.cart[product.slug]["quantity"]))
-            safe_promo_data = {
-                k: (str(v) if isinstance(v, Decimal) else v)
-                for k, v in promo_data.items()
-            }
-            return safe_promo_data
-        return None
-
-    def add(self, product, quantity: int = 1) -> None:
+    
+    def _check_addable(self, product, quantity):
         if not product.pk:
             return
-
         if quantity <= 0:
-            self.remove(product)
-            return
+            return False
+        if product.stock_quantity < quantity:
+            return False
+        return True
 
-        max_addable = product.stock_quantity - quantity
-        if max_addable <= 0:
-            quantity = min(quantity, product.stock_quantity)
+
+    def get_promotion(self, product, quantity):
+        promo = product.promotion
+        if not promo:
+            return None
+        if not promo.is_valid():
+            return None
+        if promo.type in ("fixed", "percentage"):
+            return str(promo)
+        if promo.type == "BQG":
+            return promo.sammary(quantity)
+
+    def add(self, product, quantity: int = 1) -> None:
+        if not self._check_addable(product, quantity):return
 
         slug = str(product.slug)
-        item = self.cart.get(slug)
 
-        if item:
-            self.update(item, str(quantity))
-        else:
-            self.cart[slug] = {
-                "base_price": str(product.base_price),
-                "price": str(product.final_price),
-                "quantity": str(min(quantity, product.stock_quantity)),
-                "added_at": timezone.now().isoformat(),
-            }
+        self.cart[slug] = {
+            "base_price": str(product.base_price),
+            "price": str(product.final_price),
+            "quantity": str(min(quantity, product.stock_quantity)),
+            "added_at": timezone.now().isoformat(),
+        }
+        if promo := self.get_promotion(product, quantity):
+            self.cart[slug].update({"promotion": promo})
 
-
-
-        self.cart[slug].update({"promotion": self.get_promotion(product)})
         self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], product))})
-        self.cart[slug].update({"shipping_plan": product.shipping_plans.first() if product.shipping_plans.exists() else None})
         self.save()
 
-    def get_subtotal(self, item, product):
+    def get_subtotal(self, item):
         base_price = Decimal(item["price"]) * Decimal(item["quantity"])
         gift_price = base_price
-        
-        if item["promotion"] == "disactivated":
 
+        if "promotion" not in item.keys():
             return gift_price
-        
-        if promo := self.get_promotion(product):
-            if promo.get("can_apply"):
-                gift_price += Decimal(promo.get("total_gift_price", 0))
+        else:
+            promo = item["promotion"]
+            if "type" in promo and promo["type"] == "BQG":
+                gift_price += Decimal(promo["total_gift_price"])
 
-        return str(gift_price)
-
-    def calculate_tier_weight_shipping_cost(self, product, quantity):
-        item_weight_shipping_cost = Decimal('0.00')
-        if product.shipping_plans.exists():
-            plan = product.shipping_plans.first()
-            if plan.weight_tiers.exists():
-                tier = plan.weight_tiers.filter(min_weight__lte=product.weight).order_by('min_weight').last()
-                if tier:
-                    item_weight_shipping_cost = tier.price_per_kilo * product.weight * quantity
-        return item_weight_shipping_cost
-
-    def calculate_total_shipping_cost(self):
-        """
-        Calculate the total shipping cost for all items in the cart,
-        considering each seller's shipping plans and weight tiers.
-        """
-        total_shipping_cost = Decimal('0.00')
-        sellers_shipping_costs = {}
-        for slug, item in self.cart.items():
-            try:
-                product = Product.objects.get(slug=slug)
-            except Product.DoesNotExist:
-                continue
-            seller = product.seller
-            quantity = int(item["quantity"])
-            # Calculate shipping cost for this item
-            item_shipping_cost = self.calculate_tier_weight_shipping_cost(product, quantity)
-            # Track shipping cost per seller
-            if seller not in sellers_shipping_costs:
-                sellers_shipping_costs[seller] = {
-                    "base_price": Decimal('0.00'),
-                    "items_shipping_cost": Decimal('0.00')
-                }
-            # Add base price for the seller's shipping plan (once per seller)
-            if product.shipping_plans.exists():
-                plan = product.shipping_plans.first()
-                if sellers_shipping_costs[seller]["base_price"] == Decimal('0.00'):
-                    sellers_shipping_costs[seller]["base_price"] = plan.base_price
-            sellers_shipping_costs[seller]["items_shipping_cost"] += item_shipping_cost
-
-        # Sum up all sellers' shipping costs
-        for costs in sellers_shipping_costs.values():
-            total_shipping_cost += costs["base_price"] + costs["items_shipping_cost"]
-        return total_shipping_cost
+        return gift_price
 
     def get_cart_summary(self):
         total_items = sum(int(item["quantity"]) for item in self.cart.values())
         total_price = self.get_total_price()
-        shipping_cost = self.calculate_total_shipping_cost()
+        # shipping_cost = self.calculate_total_shipping_cost()
         return {
             "total_items": total_items,
             "total_price": str(total_price),
-            "shipping_cost": str(shipping_cost),
+            # "shipping_cost": str(shipping_cost),
         }
 
 
@@ -216,13 +155,10 @@ class ShoppingCart:
         cache.set(user_cart_key, merged_cart, timeout=3600)
         cache.delete(session_cart_key)
         return added_count
-
+#Here
     def deactive_promotion(self, product):
-        promo = self.get_promotion(product)
         item = self.cart.get(str(product.slug))
-        if item is None:
-            return
-        if promo and promo["type"] in ["BQG"]:
+        if "promotion" in item.keys() and item["promotion"]["type"] in ["BQG"]:
             item["promotion"] = "disactivated"
             
         self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})
