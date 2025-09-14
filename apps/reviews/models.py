@@ -39,6 +39,5 @@ class Review(models.Model):
         return f"{identifier} - {self.product.name} ({self.rating}/5)"
 
     def save(self, *args, **kwargs):
-        # logic بتاعتك هنا
-        self.product.update_rating()
         super().save(*args, **kwargs)
+        self.product.update_rating()

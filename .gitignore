@@ -23,6 +23,8 @@ mediafiles
 *.so
 __pycache__/
 
+migrations/
+
 .env
 # IDEs and editors
 .vscode/

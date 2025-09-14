@@ -70,7 +70,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"))
     gift_item = models.BooleanField(default=False, verbose_name=_("Gift Item"))
-    discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Discount"))
+    discount = models.DecimalField(max_digits=10, default=0, decimal_places=2, verbose_name=_("Discount"))
 
     class Meta:
         verbose_name = _("Order Item")

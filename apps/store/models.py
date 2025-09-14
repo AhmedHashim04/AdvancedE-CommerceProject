@@ -25,7 +25,6 @@ class Brand(models.Model):
     def __str__(self):
         return self.name
 
-
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(unique=True, blank=True)
@@ -40,7 +39,6 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -62,14 +60,12 @@ class ProductColor(models.Model):
     def __str__(self):
         return f"{self.name} ({self.hex_code})"
 
-
 class ProductImage(models.Model):
     image = models.ImageField(upload_to="products/images/")
     alt_text = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.alt_text
-
 
 # -------------------------------------
 # Main Product Model
@@ -129,7 +125,7 @@ class Product(SEOFieldsMixin, models.Model):
     attributes = models.JSONField(blank=True, null=True)
     color_options = models.ManyToManyField('ProductColor', blank=True)
 
-    rating = models.PositiveIntegerField(verbose_name="Average Rating", default=0, max_length=1, blank=True, null=True)
+    rating = models.DecimalField(verbose_name="Average Rating", max_digits=2, decimal_places=1, default=0, blank=True, null=True)
     review_count = models.PositiveIntegerField(verbose_name="Review Count", default=0, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -177,7 +173,8 @@ class Product(SEOFieldsMixin, models.Model):
         return price
 
     def update_rating(self):
-        self.rating = int(self.reviews.aggregate(models.Avg('rating'))['rating__avg'] or 0)
-        self.review_count += 1 
-
-        self.save(update_fields=['rating', 'review_count'])
+            
+        agg = self.reviews.aggregate(avg=models.Avg("rating"), count=models.Count("id"))
+        self.rating = agg["avg"] or 0
+        self.review_count = agg["count"]
+        self.save(update_fields=["rating", "review_count"])

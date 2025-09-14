@@ -4,11 +4,11 @@ from django.utils.translation import gettext_lazy as _
 
 class Seller(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    default_shipping_company = models.ForeignKey("shipping.ShippingCompany", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Default Shipping Company")
     store_name = models.CharField(max_length=150, unique=True)
     store_description = models.TextField(blank=True, null=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
+    default_shipping_company = models.ForeignKey("shipping.ShippingCompany", on_delete=models.PROTECT, verbose_name="Default Shipping Company")
     address = models.ForeignKey("shipping.Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

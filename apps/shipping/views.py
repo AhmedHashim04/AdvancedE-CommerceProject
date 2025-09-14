@@ -6,8 +6,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.utils import get_client_ip
 
-from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
-# Create your views here.
 
 
 class AddressViewSet(viewsets.ModelViewSet):
@@ -29,9 +27,7 @@ class AddressViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def set_default(self, request, pk=None):
-        """
-        تعيين عنوان كافتراضي
-        """
+
         address = self.get_object()
         if self.request.user.is_authenticated:
             Address.objects.filter(user=request.user, is_default=True).update(is_default=False)

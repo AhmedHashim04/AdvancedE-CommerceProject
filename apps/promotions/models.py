@@ -50,14 +50,17 @@ class BQGPromotion(BasePromotion):
         help_text="Quantity of free gift"
     )
 
-    percentage_amount = models.DecimalField(
-        max_digits=5, decimal_places=2,
+
+    percentage_amount = models.PositiveIntegerField(
         null=True, blank=True,
-        help_text="Percentage discount on gift (1-100)"
+        help_text="Percentage discount on gift (1-100)",
+        validators=[MinValueValidator(1), MaxValueValidator(100)]
     )
+
     fixed_amount = models.DecimalField(
         max_digits=10, decimal_places=2,
         null=True, blank=True,
+        validators=[MinValueValidator(1)],
         help_text="Fixed discount amount applied to total gift price"
     )
 

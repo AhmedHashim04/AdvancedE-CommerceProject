@@ -1,3 +1,12 @@
+<!-- 
+                          ->give him difult shipping plan 
+                         |
+Seller -- upload product |
+                         |
+                          -> change shipping plan
+
+ -->
+
 # 🛒 Advanced Ecommerce System
 A powerful, scalable ecommerce platform built with Django, designed for multi-seller marketplaces. Each seller can register, manage their own dedicated dashboard, and access personalized tools for products, orders, shipping, and analytics. The system supports multi-shipping company integration, enabling sellers to offer various delivery options with flexible pricing, regions, and timeframes. Customers can select the shipping plan that suits them, with automatic cost adjustments for excess weight.
 

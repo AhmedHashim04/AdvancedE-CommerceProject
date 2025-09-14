@@ -27,10 +27,6 @@ class Address(models.Model):
     def __str__(self):
         return f"{self.full_name} - {self.detailed_address}, {self.city}"
 
-
-
-
-
 class Governorate(models.Model):
     name_ar = models.CharField(max_length=100, verbose_name=_("Governorate Name (Arabic)"))
     name_en = models.CharField(max_length=100, verbose_name=_("Governorate Name (English)"))
@@ -88,7 +84,7 @@ class ShippingPlan(models.Model):
         verbose_name_plural = _("Shipping Plans")
     
     def __str__(self):
-        return f"{self.company.name} - {self.governorate.name_ar}"
+        return f"{self.company.name} - {', '.join(gov.name_ar for gov in self.governorate.all())} - {self.base_price} EGP"
         
 class WeightPricingTier(models.Model):
     plan = models.ForeignKey(ShippingPlan, on_delete=models.CASCADE, related_name='weight_tiers')
@@ -124,12 +120,9 @@ class Shipment(models.Model):
     customer_address = models.ForeignKey("shipping.Address", on_delete=models.CASCADE, related_name='shipments')
 
     tracking_number = models.CharField(max_length=100, unique=True, blank=True)
-
     status = models.CharField(max_length=20, choices=SHIPMENT_STATUS, default='pending')
-
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Shipping Cost")
     estimated_delivery = models.DateField(null=True, blank=True, verbose_name="Estimated Delivery Date")
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -141,9 +134,12 @@ class Shipment(models.Model):
         return f"Shipment #{self.id} for Order #{self.order.id}"
 
     def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
         if not self.tracking_number:
             self.tracking_number = f"TRK{self.id:08d}"
-        super().save(*args, **kwargs)
+            super().save(update_fields=["tracking_number"])
+
+
 
 class ShipmentItem(models.Model):
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='items')

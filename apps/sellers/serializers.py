@@ -12,11 +12,8 @@ class SellerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Seller
-        fields = [
-        'default_shipping_company', 'store_name', 'store_description',
-        'email', 'phone', 'address', 'on_delete', 'created_at',
-        ]
-        read_only_fields = ["id", "user", "is_verified", "created_at"]
+        fields = "__all__"
+        read_only_fields = ["id", "user",  "is_verified", "created_at"]
 
 class ShippingCompanySerializer(serializers.ModelSerializer):
     class Meta:
