@@ -15,7 +15,7 @@ class IsSellerOwner(permissions.BasePermission):
 
 
 
-class SellerView(viewsets.ModelViewSet):
+class SellerViewSet(viewsets.ModelViewSet):
     serializer_class = SellerSerializer
     permission_classes = [permissions.IsAuthenticated, IsSellerOwner]
 

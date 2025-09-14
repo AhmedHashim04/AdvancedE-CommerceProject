@@ -3,8 +3,7 @@ from rest_framework import serializers
 from apps.shipping.models import ShippingCompany
 from .models import Seller
 from apps.shipping.serializers import AddressSerializer, ShippingCompanySerializer, ShippingPlanSerializer
-from apps.store.models import Product
-from apps.orders.models import Order
+
 
 
 class SellerSerializer(serializers.ModelSerializer):
