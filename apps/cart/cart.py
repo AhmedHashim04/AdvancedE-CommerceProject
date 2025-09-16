@@ -1,4 +1,5 @@
 
+from itertools import product
 from django.core.cache import cache
 from decimal import Decimal
 from django.utils import timezone
@@ -45,14 +46,13 @@ class ShoppingCart:
 
     def get_promotion(self, product, quantity):
         promo = product.promotion
-        if not promo:
-            return None
-        if not promo.is_valid():
+        if not (promo and promo.is_valid()):
             return None
         if promo.type in ("fixed", "percentage"):
             return str(promo)
+        
         if promo.type == "BQG":
-            return promo.sammary(quantity)
+            return promo.summary(quantity)
 
     def add(self, product, quantity: int = 1) -> None:
         if not self._check_addable(product, quantity):return
@@ -65,25 +65,30 @@ class ShoppingCart:
             "quantity": str(min(quantity, product.stock_quantity)),
             "added_at": timezone.now().isoformat(),
         }
+
         if promo := self.get_promotion(product, quantity):
             self.cart[slug].update({"promotion": promo})
-
-        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], product))})
+            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
+        else:
+            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
         self.save()
 
-    def get_subtotal(self, item):
-        base_price = Decimal(item["price"]) * Decimal(item["quantity"])
-        gift_price = base_price
+    def get_subtotal(self, item, promotion=None):
 
-        if "promotion" not in item.keys():
-            return gift_price
-        else:
-            promo = item["promotion"]
-            if "type" in promo and promo["type"] == "BQG":
-                gift_price += Decimal(promo["total_gift_price"])
+        quantity = int(item.get("quantity", 1))
+        price = Decimal(item.get("price", "0"))
+        subtotal = price * quantity
 
-        return gift_price
+        # Handle promotion logic
+        if promotion:
+            # If promo is a string, try to parse if possible
+            if isinstance(promotion, dict) and promotion.get("type") == "BQG":
+                # Buy X Get Y logic
+                gift_price = Decimal(promotion.get("total_gift_price", "0"))
+                subtotal += gift_price
 
+        return subtotal
+    
     def get_cart_summary(self):
         total_items = sum(int(item["quantity"]) for item in self.cart.values())
         total_price = self.get_total_price()
@@ -155,13 +160,13 @@ class ShoppingCart:
         cache.set(user_cart_key, merged_cart, timeout=3600)
         cache.delete(session_cart_key)
         return added_count
-#Here
+
     def deactive_promotion(self, product):
         item = self.cart.get(str(product.slug))
         if "promotion" in item.keys() and item["promotion"]["type"] in ["BQG"]:
             item["promotion"] = "disactivated"
             
-        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})
+        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug]))})
         self.save()
 
 
@@ -173,5 +178,5 @@ class ShoppingCart:
         if promo and promo["type"] in ["BQG"]:
             item["promotion"] = promo
         
-        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], product))})
+        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], promo))})
         self.save()

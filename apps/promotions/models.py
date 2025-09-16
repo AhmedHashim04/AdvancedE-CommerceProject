@@ -69,7 +69,7 @@ class BQGPromotion(BasePromotion):
         if self.percentage_amount and self.fixed_amount:
             raise ValidationError("BQG promotion cannot have both percentage and fixed discount.")
 
-    def is_valid(self, bought_qty: int) -> bool:
+    def can_apply(self, bought_qty: int) -> bool:
         """Check if promotion is applicable based on purchased quantity and stock."""
         return (
             bought_qty >= self.quantity_to_buy
@@ -116,7 +116,7 @@ class BQGPromotion(BasePromotion):
         """
         Returns a detailed summary of the BQG promotion, including validation status and prerequisites.
         """
-        can_apply = self.is_valid(bought_qty)
+        can_apply = self.can_apply(bought_qty)
         summary_data = {
             "gift": str(self.gift),
             "quantity_to_buy": self.quantity_to_buy,
