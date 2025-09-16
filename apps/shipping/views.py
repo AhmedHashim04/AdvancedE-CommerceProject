@@ -88,3 +88,16 @@ class ShippingPlanViewSet(viewsets.ModelViewSet):
         if not company:
             raise PermissionError("You must be a verified shipping company to create a shipping plan.")
         serializer.save(company=company)
+
+
+"""
+    Scenario of shipping cost calculation:
+        customer add product if product.shipping_plan in cart_shipping_plans 
+        calculate weight(add all shipping plans weights) if total_shipping_weight > plan.min_weight 
+        calculate shipping_plan_weight_cost and change flag to true 
+        and every product belong to this shipping plan calculate_shipping_plan_weight_costs again
+        then calculate total shipping cost by sum all shipping_plan_costs + shipping_plan_weight_costs
+
+    When removing a product
+        
+"""

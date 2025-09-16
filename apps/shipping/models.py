@@ -86,21 +86,26 @@ class ShippingPlan(models.Model):
     def __str__(self):
         return f"{self.company.name} - {', '.join(gov.name_ar for gov in self.governorate.all())} - {self.base_price} EGP"
         
-class WeightPricingTier(models.Model):
-    plan = models.ForeignKey(ShippingPlan, on_delete=models.CASCADE, related_name='weight_tiers')
-    min_weight = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Minimum Weight (kg)"))
-    max_weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Maximum Weight (kg)"))
+class WeightPricing(models.Model):
+    plan = models.OneToOneField(ShippingPlan, on_delete=models.CASCADE, related_name='weight_pricing')
+    min_weight = models.DecimalField(help_text="Minimum weight in kg, null if not applicable", max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Minimum Weight (kg)"))
     price_per_kilo = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price per Kilo (EGP)"))
 
     
     class Meta:
-        verbose_name = _("Weight Pricing Tier")
-        verbose_name_plural = _("Weight Pricing Tiers")
+        verbose_name = _("Weight Pricing")
+        verbose_name_plural = _("Weight Pricing")
         ordering = ['min_weight']
-    
+
+    def shipping_plan_weight_cost(self, total_weight):
+        if not self.min_weight:
+            return 0
+        if total_weight > self.min_weight:
+                return self.price_per_kilo * total_weight
+        return 0
+
     def __str__(self):
-        max_weight = self.max_weight or _("Above")
-        return f"{self.min_weight} - {max_weight} kg: {self.price_per_kilo} EGP"
+        return f"{self.min_weight}: {self.price_per_kilo} EGP"
     
 
 
