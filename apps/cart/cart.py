@@ -44,14 +44,12 @@ class ShoppingCart:
 
 
     def get_promotion(self, product, quantity):
-        promo = product.promotion
+        promo = getattr(product, "promotion", None)
         if not (promo and promo.is_valid()):
             return None
-        if promo.type in ("fixed", "percentage"):
-            return str(promo)
-        
-        if promo.type == "BQG":
-            return promo.summary(quantity)
+        summary = promo.summary(quantity)
+        return summary
+
 
     def calculate_shipping_cost(self, product, quantity):
         plan = product.shipping_plan
@@ -75,24 +73,21 @@ class ShoppingCart:
         return total_shipping_cost
 
     def add(self, product, quantity: int = 1) -> None:
-        if not self._check_addable(product, quantity):return
+        if not self._check_addable(product, quantity): return
 
         slug = str(product.slug)
 
         self.cart[slug] = {
             "base_price": str(product.base_price),
             "price": str(product.final_price),
-            "quantity": str(min(quantity, product.stock_quantity)),
-            "added_at": timezone.now().isoformat(),
-        }
-
-        self.calculate_shipping_cost(product, quantity)
+            "quantity": quantity,
+            }
 
         if promo := self.get_promotion(product, quantity):
             self.cart[slug].update({"promotion": promo})
-            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
-        else:
-            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
+
+        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
+        self.calculate_shipping_cost(product, quantity)
         self.save()
 
     def get_subtotal(self, item, promotion=None):
@@ -100,10 +95,9 @@ class ShoppingCart:
         quantity = int(item.get("quantity", 1))
         price = Decimal(item.get("price", "0"))
         subtotal = price * quantity
-
         # Handle promotion logic
         if promotion:
-            # If promo is a string, try to parse if possible
+            # Ensure promotion is a dict before accessing .get
             if isinstance(promotion, dict) and promotion.get("type") == "BQG":
                 # Buy X Get Y logic
                 gift_price = Decimal(promotion.get("total_gift_price", "0"))
@@ -184,21 +178,23 @@ class ShoppingCart:
         return added_count
 
     def deactive_promotion(self, product):
-        item = self.cart.get(str(product.slug))
-        if "promotion" in item.keys() and item["promotion"]["type"] in ["BQG"]:
-            item["promotion"] = "disactivated"
-            
-        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug]))})
-        self.save()
-
-
-    def reactive_promotion(self, product):
-        item = self.cart.get(str(product.slug))
+        slug = str(product.slug)
+        item = self.cart.get(slug)
         if item is None:
             return
-        promo = self.get_promotion(product)
-        if promo and promo["type"] in ["BQG"]:
-            item["promotion"] = promo
-        
-        self.cart[product.slug].update({"subtotal": str(self.get_subtotal(self.cart[product.slug], promo))})
-        self.save()
+        if "promotion" in item and isinstance(item["promotion"], dict) and item["promotion"].get("type") == "BQG":
+            item["promotion"] = "disactivated"
+            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
+            self.save()
+
+    def reactivate_promotion(self, product):
+        slug = str(product.slug)
+        item = self.cart.get(slug)
+        if item is None:
+            return
+        if item.get("promotion") == "disactivated":
+            quantity = int(item.get("quantity", 1))
+            if promo := self.get_promotion(product, quantity):
+                self.cart[slug].update({"promotion": promo})
+                self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
+                self.save()

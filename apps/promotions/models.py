@@ -286,13 +286,12 @@ class Promotion(BasePromotion):
     def summary(self, bought_qty: int) -> dict:
 
         base = {
-            "id": str(self.id),
             "type": self.type,
         }
         if self.type == PromotionType.PERCENTAGE:
-            base["percentage_amount"] = self.percentage_amount
+            base["amount"] = self.percentage_amount
         elif self.type == PromotionType.FIXED:
-            base["fixed_amount"] = self.fixed_amount
+            base["amount"] = self.fixed_amount
         elif self.type == PromotionType.BQG and self.bqg_promotion:
             base.update(self.bqg_promotion.summary(bought_qty))
 
