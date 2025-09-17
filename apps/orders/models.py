@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from apps.payments.models import PaymentMethod
 
 class OrderStatus(models.TextChoices):
     PENDING = "pending", _("Pending")
@@ -15,6 +16,7 @@ class OrderStatus(models.TextChoices):
     CANCELLED = "cancelled", _("Cancelled")
     RETURNED = "returned", _("Returned")
     FAILED = "failed", _("Failed")
+
 
 class Order(models.Model):
 
@@ -26,8 +28,8 @@ class Order(models.Model):
 
     notes = models.TextField(blank=True, null=True, verbose_name=_("Additional Notes"))
     status = models.CharField(max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING, verbose_name=_("Status"))
-    weight_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Delivery Fee"))
 
+    payment_method = models.CharField(max_length=50, default=PaymentMethod.PAYMOB, choices=PaymentMethod.choices, verbose_name=_("Payment Method"))
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Total Price"))
     paid = models.BooleanField(verbose_name=_("Paid"), default=False)
 

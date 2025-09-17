@@ -10,7 +10,7 @@ class ShoppingCart:
         self.request = request
         self.session = request.session
         self.cart = self._get_cart_items()
-        self.shipping = {}
+        # self.shipping = self._get_shipping()
 
     def _cache_key(self):
         if self.request.user.is_authenticated:
@@ -27,10 +27,17 @@ class ShoppingCart:
             cache.set(cache_key, cart, timeout=3600)
         return cart
 
+    # def _get_shipping(self):
+    #     shipping = self.session.get("shipping", {})
+    #     if not isinstance(shipping, dict):
+    #         shipping = {}
+    #     return shipping
+
     def save(self):
         cache_key = self._cache_key()
         cache.set(cache_key, self.cart, timeout=3600)
         self.session["cart"] = self.cart
+        # self.session["shipping"] = self.shipping
         self.session.modified = True
     
     def _check_addable(self, product, quantity):
@@ -51,26 +58,26 @@ class ShoppingCart:
         return summary
 
 
-    def calculate_shipping_cost(self, product, quantity):
-        plan = product.shipping_plan
-        weight = product.weight or 0
-        kilos = weight * quantity
-        if plan not in self.shipping:
-            self.shipping[plan] = {}
-        self.shipping[plan]["base_price"] = str(getattr(plan, "base_price", "0.00"))
-        self.shipping[plan][str(product.slug)] = kilos
+    # def calculate_shipping_cost(self, product, quantity, governorate):
+    #     plan = product.shipping_plan(governorate)
+    #     weight = product.weight or 0
+    #     kilos = weight * quantity
+    #     if plan not in self.shipping:
+    #         self.shipping[plan] = {}
+    #     self.shipping[plan]["base_price"] = str(getattr(plan, "base_price", "0.00"))
+    #     self.shipping[plan][str(product.slug)] = kilos
         
-    def calculate_total_shipping_cost(self):
-        total_shipping_cost = Decimal("0.00")
-        total_weight = Decimal("0.00")
-        for plan, details in self.shipping.items():
-            total_plan_weight = sum(
-                weight for key, weight in details.items() if key != "base_price"
-            )
-            total_shipping_cost += Decimal(details.get("base_price", "0.00"))
-            total_weight += plan.shipping_plan_weight_cost(total_plan_weight)
-            total_shipping_cost += total_weight
-        return total_shipping_cost
+    # def calculate_total_shipping_cost(self):
+    #     total_shipping_cost = Decimal("0.00")
+    #     total_weight = Decimal("0.00")
+    #     for plan, details in self.shipping.items():
+    #         total_plan_weight = sum(
+    #             weight for key, weight in details.items() if key != "base_price"
+    #         )
+    #         total_shipping_cost += Decimal(details.get("base_price", "0.00"))
+    #         total_weight += plan.shipping_plan_weight_cost(total_plan_weight)
+    #         total_shipping_cost += total_weight
+    #     return total_shipping_cost
 
     def add(self, product, quantity: int = 1) -> None:
         if not self._check_addable(product, quantity): return
@@ -87,7 +94,7 @@ class ShoppingCart:
             self.cart[slug].update({"promotion": promo})
 
         self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
-        self.calculate_shipping_cost(product, quantity)
+        # self.calculate_shipping_cost(product, quantity)
         self.save()
 
     def get_subtotal(self, item, promotion=None):
@@ -108,16 +115,19 @@ class ShoppingCart:
     def get_cart_summary(self):
         total_items = sum(int(item["quantity"]) for item in self.cart.values())
         total_price = self.get_total_price()
-        shipping_cost = self.calculate_total_shipping_cost()
+        # shipping_cost = self.calculate_total_shipping_cost()
         return {
             "total_items": total_items,
             "total_price": str(total_price),
-            "shipping_cost": str(shipping_cost),
+            # "shipping_cost": str(shipping_cost),
         }
 
 
     def remove(self, product: Product):
         slug = str(product.slug)
+        # self.shipping[product.shipping_plan].pop(slug, None)
+        # if not self.shipping[product.shipping_plan]:
+        #     self.shipping.pop(product.shipping_plan, None)
         if slug in self.cart:
             del self.cart[slug]
             self.save()
@@ -127,6 +137,7 @@ class ShoppingCart:
         cache_key = self._cache_key()
         cache.delete(cache_key)
         self.session["cart"] = {}
+        # self.shipping = {}
         self.save()
 
 
@@ -154,6 +165,8 @@ class ShoppingCart:
 
         merged_cart = user_cart.copy()
         added_count = 0
+
+        
 
         for product_slug, item in session_cart.items():
             try:

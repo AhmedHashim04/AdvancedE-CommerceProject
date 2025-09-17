@@ -65,6 +65,10 @@ class ShippingCompany(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    def get_shipping_plan(self, governorate):
+        plans = self.plans.filter(governorate=governorate, is_active=True)
+        return plans.first()  
+    
     class Meta:
         verbose_name = _("Shipping Company")
         verbose_name_plural = _("Shipping Companies")

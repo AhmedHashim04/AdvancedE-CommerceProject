@@ -10,6 +10,20 @@ from apps.orders.models import Order, OrderItem, OrderStatus
 from apps.store.models import Product
 from apps.shipping.models import Address
 
+# user/guest go to cart 
+# press checkout
+# choose address or create new one
+# check address (governorate) and get shipping_fee if governorate isn,t available -> error
+# choose payment method (cash on delivery/paymob)
+# if paymob -> view to create payment page
+# after payment success -> webhook to update order status to processing and paid = True
+# if payment fails -> order status = failed and paid = False
+# cart not cleared and order not created
+# if cash on delivery -> confirm order with paid = False and status = pending
+# create order
+
+
+
 class OrderCreateView(CreateAPIView):
     permission_classes = [permissions.AllowAny]
 

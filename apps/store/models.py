@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
 from apps.sellers.models import Seller
-from apps.shipping.models import ShippingPlan
+from apps.shipping.models import ShippingPlan, ShippingCompany
 from apps.promotions.models import Promotion
 
 from django.utils.translation import gettext_lazy as _
@@ -99,8 +99,8 @@ class Product(SEOFieldsMixin, models.Model):
     brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, related_name="products")
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
-    #TODO: Change to Many Shipping Plans later
-    shipping_plan = models.ForeignKey(ShippingPlan, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Default Shipping Plan", help_text="Default shipping plan for this product")
+
+    shipping_company = models.ForeignKey(ShippingCompany, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Default Shipping Company", help_text="Default shipping company for this product")
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
     base_price = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -160,11 +160,11 @@ class Product(SEOFieldsMixin, models.Model):
 
     def __str__(self):
         return self.name
-    
-    def get_shipping_plan(self):
-        if self.shipping_plan:
-            return self.shipping_plan
-    
+
+    def shipping_plan(self, governorate):
+        if self.shipping_company:
+            return self.shipping_company.get_shipping_plan(governorate)
+
     @property
     def final_price(self):
         price = self.base_price
