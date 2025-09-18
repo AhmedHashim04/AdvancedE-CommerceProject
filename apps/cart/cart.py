@@ -14,30 +14,42 @@ class ShoppingCart:
         self.cart = self._get_cart_items()
         self.shipping = self._get_shipping()
 
-    def _cache_key(self):
+    def _cache_key_cart(self):
         if self.request.user.is_authenticated:
             return f"cart_user_{self.request.user.id}"
         return f"cart_session_{self.session.session_key}"
+    
+    def _cache_key_shipping(self):
+        if self.request.user.is_authenticated:
+            return f"shipping_user_{self.request.user.id}"
+        return f"shipping_session_{self.session.session_key}"
 
     def _get_cart_items(self):
-        cache_key = self._cache_key()
-        cart = cache.get(cache_key)
+        cache_key_cart = self._cache_key_cart()
+        cart = cache.get(cache_key_cart)
         if cart is None:
             cart = self.session.get("cart", {})
             if not isinstance(cart, dict):
                 cart = {}
-            cache.set(cache_key, cart, timeout=3600)
+            cache.set(cache_key_cart, cart, timeout=3600)
         return cart
 
     def _get_shipping(self):
-        shipping = self.session.get("shipping", {})
-        if not isinstance(shipping, dict):
-            shipping = {}
+        cache_key_shipping = self._cache_key_shipping()
+        shipping = cache.get(cache_key_shipping)
+        if shipping is None:
+            shipping = self.session.get("shipping", {})
+            if not isinstance(shipping, dict):
+                shipping = {}
+            cache.set(cache_key_shipping, shipping, timeout=3600)
         return shipping
 
+
     def save(self):
-        cache_key = self._cache_key()
-        cache.set(cache_key, self.cart, timeout=3600)
+        cache_key_cart = self._cache_key_cart()
+        cache_key_shipping = self._cache_key_shipping()
+        cache.set(cache_key_cart, self.cart, timeout=3600)
+        cache.set(cache_key_shipping, self.shipping, timeout=3600)
         self.session["cart"] = self.cart
         self.session["shipping"] = self.shipping
         self.session.modified = True
@@ -97,6 +109,7 @@ class ShoppingCart:
             self.shipping[plan] = {}
         self.shipping[plan]["base_price"] = str(getattr(plan, "base_price", "0.00"))
         self.shipping[plan][str(product.slug)] = float(kilos)  # Store as float for summing
+        self.save()
 
     def calculate_total_shipping_cost(self):
         """
@@ -196,8 +209,8 @@ class ShoppingCart:
  
     def clear(self):
         self.cart = {}
-        cache_key = self._cache_key()
-        cache.delete(cache_key)
+        cache_key_cart = self._cache_key_cart()
+        cache.delete(cache_key_cart)
         self.session["cart"] = {}
         self.shipping = {}
         self.save()
@@ -222,13 +235,22 @@ class ShoppingCart:
         session_cart_key = f"cart_session_{old_session_key}"
         user_cart_key = f"cart_user_{user.id}"
 
+        session_shipping_key = f"shipping_session_{old_session_key}"
+        user_shipping_key = f"shipping_user_{user.id}"
+
         session_cart = cache.get(session_cart_key, {})
         user_cart = cache.get(user_cart_key, {})
+        session_shipping = cache.get(session_shipping_key, {})
+        user_shipping = cache.get(user_shipping_key, {})
 
         merged_cart = user_cart.copy()
         added_count = 0
 
-        
+        # Merge shipping information
+        for key, value in session_shipping.items():
+            if key not in user_shipping:
+                user_shipping[key] = value
+        cache.set(user_shipping_key, user_shipping, timeout=3600)
 
         for product_slug, item in session_cart.items():
             try:
