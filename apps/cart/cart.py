@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.utils import timezone
 from apps.store.models import Product
 from apps.shipping.models import Address
+from apps.promotions.models import Promotion
 
 
 class ShoppingCart:
@@ -50,21 +51,34 @@ class ShoppingCart:
             return False
         return True
 
+    def get_promotion(self, product, quantity):
+        promo = getattr(product, "promotion", None)
+        if not (promo and promo.is_valid()):
+            return None
+        summary = promo.summary(quantity)
+        return summary
 
-    def iterate_cart_items_to_add_shipping_costs_based_on_new_address(self):
+
+    def iterate_cart_items_to_add_shipping_costs_based_on_new_address(self,address=None):
+        if address  :
+            governorate = address.governorate
+
+        elif self.request.user.is_authenticated:
+            governorate = Address.objects.filter(user=self.request.user, is_default=True)\
+            .first().governorate
+        else:
+            return None
+            
         for slug, item in self.cart.items():
             try:
                 product = Product.objects.get(slug=slug)
             except Product.DoesNotExist:
                 continue
             quantity = int(item.get("quantity", 1))
-            governorate = Address.objects.filter(user=self.request.user, is_default=True).first().governorate
-            if self.request.user.is_authenticated and governorate:
-                self.calculate_shipping_cost(product, quantity, governorate)
+            self.calculate_shipping_cost(product, quantity, governorate)
+
         self.calculate_total_shipping_cost()
         self.save()
-
-
 
     def calculate_shipping_cost(self, product, quantity, governorate = None):
 
@@ -104,29 +118,53 @@ class ShoppingCart:
             "price": str(product.final_price),
             "quantity": quantity,
             }
+        if promo := self.get_promotion(product, quantity):
+            self.cart[slug].update({"promotion": promo})
 
-        governorate = Address.objects.filter(user=self.request.user, is_default=True).first().governorate
+        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
         
-        if self.request.user.is_authenticated and governorate:
+        if self.request.user.is_authenticated:
+                governorate = Address.objects.filter(user=self.request.user, is_default=True).first().governorate
                 self.calculate_shipping_cost(product, quantity, governorate)
         self.save()
 
-    def get_subtotal(self, item):
+    def get_subtotal(self, item, promotion=None):
 
         quantity = int(item.get("quantity", 1))
         price = Decimal(item.get("price", "0"))
         subtotal = price * quantity
+        # Handle promotion logic
+        if promotion:
+            # Ensure promotion is a dict before accessing .get
+            if isinstance(promotion, dict) and promotion.get("type") == "BQG":
+                # Buy X Get Y logic
+                gift_price = Decimal(promotion.get("total_gift_price", "0"))
+                subtotal += gift_price
+
+
         return subtotal
     
-    def get_cart_summary(self):
+    def get_cart_summary(self,address=None):
+        response = {}
+
         total_items = sum(int(item["quantity"]) for item in self.cart.values())
         total_price = self.get_total_price()
-        shipping_cost = self.calculate_total_shipping_cost()
-        return {
+        response.update({
             "total_items": total_items,
             "total_price": str(total_price),
-            "shipping_cost": str(shipping_cost),
-        }
+        })
+
+        if address:
+            self.iterate_cart_items_to_add_shipping_costs_based_on_new_address(address)
+            shipping_cost = self.calculate_total_shipping_cost()
+            response.update({
+                "shipping_cost": str(shipping_cost),
+            })
+            response.update({
+                "grand_total": str(total_price + shipping_cost),
+            })
+        return response
+
 
 
     def remove(self, product: Product):
@@ -145,7 +183,7 @@ class ShoppingCart:
         cache_key = self._cache_key()
         cache.delete(cache_key)
         self.session["cart"] = {}
-        # self.shipping = {}
+        self.shipping = {}
         self.save()
 
 
@@ -197,3 +235,25 @@ class ShoppingCart:
         cache.set(user_cart_key, merged_cart, timeout=3600)
         cache.delete(session_cart_key)
         return added_count
+    
+    def deactive_promotion(self, product):
+        slug = str(product.slug)
+        item = self.cart.get(slug)
+        if item is None:
+            return
+        if "promotion" in item and isinstance(item["promotion"], dict) and item["promotion"].get("type") == "BQG":
+            item["promotion"] = "disactivated"
+            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
+            self.save()
+
+    def reactivate_promotion(self, product):
+        slug = str(product.slug)
+        item = self.cart.get(slug)
+        if item is None:
+            return
+        if item.get("promotion") == "disactivated":
+            quantity = int(item.get("quantity", 1))
+            if promo := self.get_promotion(product, quantity):
+                self.cart[slug].update({"promotion": promo})
+                self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
+                self.save()

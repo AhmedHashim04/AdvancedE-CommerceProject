@@ -29,19 +29,3 @@ class PaymentMethod(models.TextChoices):
     PAYMOB = "paymob", _("Paymob")
     STRIPE = "stripe", _("Stripe")
     CASH_ON_DELIVERY = "cod", _("Cash on Delivery")
-
-
-class Payment(models.Model):
-    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="payment")
-    status = models.CharField(max_length=50)
-    method = models.CharField(max_length=50, choices=PaymentMethod.choices, default=PaymentMethod.PAYMOB)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-class SellerPayout(Payment):
-    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="payouts")
-
-    def get_items(self):
-        return self.order.get_items().filter(product__seller=self.seller)
-
-
