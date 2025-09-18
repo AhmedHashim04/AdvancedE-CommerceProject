@@ -107,7 +107,6 @@ class ProductSerializer(DynamicFieldsModelSerializer):
         return {
             "base_price": str(obj.base_price),
             "final_price": str(obj.final_price) if obj.final_price else None,
-            "currency": obj.currency,
         }
 
     def get_stock(self, obj):

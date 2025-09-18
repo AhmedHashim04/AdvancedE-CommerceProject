@@ -70,13 +70,7 @@ class ProductImage(models.Model):
 # -------------------------------------
 # Main Product Model
 # -------------------------------------
-class Currency(models.TextChoices):
-    EGP = "EGP", _("Egyptian Pound")
-    USD = "USD", _("US Dollar")
-    EUR = "EUR", _("Euro")
-    GBP = "GBP", _("British Pound")
-    JPY = "JPY", _("Japanese Yen")
-    AUD = "AUD", _("Australian Dollar")
+
 
 class SEOFieldsMixin(models.Model):
     meta_title = models.CharField(max_length=255, blank=True)
@@ -104,7 +98,6 @@ class Product(SEOFieldsMixin, models.Model):
     promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
     base_price = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.EGP)
 
     stock_quantity = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)

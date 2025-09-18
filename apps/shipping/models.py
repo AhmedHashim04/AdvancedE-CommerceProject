@@ -153,7 +153,6 @@ class Shipment(models.Model):
 class ShipmentItem(models.Model):
     shipment = models.ForeignKey(Shipment, on_delete=models.CASCADE, related_name='items')
     order_item = models.ForeignKey("orders.OrderItem", on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
     weight = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Weight (kg)")
     volume = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Volume (cm³)", null=True, blank=True)
     

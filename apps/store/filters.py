@@ -26,5 +26,4 @@ class ProductFilter(django_filters.FilterSet):
             'name': ['icontains'],
             'description': ['icontains'],
             'short_description': ['icontains'],
-            'currency': ['exact'],
         }

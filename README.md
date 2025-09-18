@@ -46,7 +46,7 @@ Additionally, the system includes an advertisements module, allowing sellers to 
 ### 🧾 Product & Category Management
 - Merchants register, manage products, assign tags, categories, brands
 - Inventory control with low stock alerts
-- Product details: SKU, barcode, descriptions, currency, tax rate
+- Product details: SKU, barcode, descriptions, tax rate
 - Media: main image, gallery, video, 360° view
 - Product variants: size, color, etc.
 - Weight, dimensions, shipping calculations
@@ -100,8 +100,8 @@ Additionally, the system includes an advertisements module, allowing sellers to 
 - Sales dashboard, bulk edits, activity logging
 - Discount code management
 
-### 🌐 Multi-Language & Multi-Currency
-- Support for multiple languages and currencies
+### 🌐 Multi-Language 
+- Support for multiple languages 
 
 ### ⚡ Performance & Security
 - Redis caching for products/categories

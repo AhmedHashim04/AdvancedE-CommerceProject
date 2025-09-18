@@ -1,3 +1,17 @@
-button_url = "https://www.paypal.com/sdk/js?client-id=test&buyer-country=US&currency=USD&components=buttons&enable-funding=venmo,paylater,card"
-Client_ID = "AXb4Hdv-QRhROm8EHyBipLxMpjFujccTmBZJtCW9H18aVGloOZQfijPpz6VVADnadKRP0oA9Geo-8BIm"
-SecretKey = "EFDyEEwRMSHnhuL1oMLaJ46i1C8_hoNqVi24YwQAMq5np5uBNbxn1RIgm_Lx_9cgAMRsrhZthrNq1SDb"
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from paypal import PayPalClient
+
+class PayPalCreateOrder(APIView):
+    def post(self, request):
+        amount = request.data.get("amount")  # ممكن تجيبه من cart
+        paypal = PayPalClient()
+        order = paypal.create_order(amount)
+        return Response(order)
+
+class PayPalCaptureOrder(APIView):
+    def post(self, request):
+        order_id = request.data.get("orderID")
+        paypal = PayPalClient()
+        capture = paypal.capture_order(order_id)
+        return Response(capture)
