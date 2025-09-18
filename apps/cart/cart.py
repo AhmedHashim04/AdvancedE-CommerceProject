@@ -58,17 +58,21 @@ class ShoppingCart:
         summary = promo.summary(quantity)
         return summary
 
-
-    def iterate_cart_items_to_add_shipping_costs_based_on_new_address(self,address=None):
-        if address  :
+    def iterate_cart_items_to_add_shipping_costs_based_on_new_address(self, address=None):
+        """
+        Updates shipping costs for all cart items based on the provided address or the user's default address.
+        """
+        governorate = None
+        if address and hasattr(address, "governorate"):
             governorate = address.governorate
-
         elif self.request.user.is_authenticated:
-            governorate = Address.objects.filter(user=self.request.user, is_default=True)\
-            .first().governorate
-        else:
-            return None
-            
+            default_address = Address.objects.filter(user=self.request.user, is_default=True).first()
+            if default_address:
+                governorate = default_address.governorate
+        if not governorate:
+            self.shipping["address"] = "No Address yet"
+            self.save()
+            return
         for slug, item in self.cart.items():
             try:
                 product = Product.objects.get(slug=slug)
@@ -76,56 +80,68 @@ class ShoppingCart:
                 continue
             quantity = int(item.get("quantity", 1))
             self.calculate_shipping_cost(product, quantity, governorate)
-
         self.calculate_total_shipping_cost()
         self.save()
 
-    def calculate_shipping_cost(self, product, quantity, governorate = None):
-
+    def calculate_shipping_cost(self, product, quantity, governorate=None):
+        """
+        Calculates and updates the shipping cost for a product and quantity to a specific governorate.
+        """
         if governorate is None:
-            return  self.shipping.update({"address": "No Address yet"})
-        
+            self.shipping["address"] = "No Address yet"
+            return
         plan = product.shipping_plan(governorate)
-        weight = product.weight or 0
+        weight = Decimal(product.weight or 0)
         kilos = weight * quantity
         if plan not in self.shipping:
             self.shipping[plan] = {}
         self.shipping[plan]["base_price"] = str(getattr(plan, "base_price", "0.00"))
-        self.shipping[plan][str(product.slug)] = kilos
-        
+        self.shipping[plan][str(product.slug)] = float(kilos)  # Store as float for summing
+
     def calculate_total_shipping_cost(self):
+        """
+        Calculates the total shipping cost for all shipping plans in the cart.
+        """
         total_shipping_cost = Decimal("0.00")
-        total_weight = Decimal("0.00")
-        if self.shipping["address"] == "No Address yet":
+        if self.shipping.get("address") == "No Address yet":
             return total_shipping_cost
-        
         for plan, details in self.shipping.items():
+            if plan == "address":
+                return None
             total_plan_weight = sum(
-                weight for key, weight in details.items() if key != "base_price"
+                Decimal(str(weight)) for key, weight in details.items() if key != "base_price"
             )
-            total_shipping_cost += Decimal(details.get("base_price", "0.00"))
-            total_weight += plan.shipping_plan_weight_cost(total_plan_weight)
-            total_shipping_cost += total_weight
+            base_price = Decimal(details.get("base_price", "0.00"))
+            # Assume plan.shipping_plan_weight_cost exists and returns Decimal
+            weight_cost = plan.shipping_plan_weight_cost(total_plan_weight) if hasattr(plan, "shipping_plan_weight_cost") else Decimal("0.00")
+            total_shipping_cost += base_price + weight_cost
         return total_shipping_cost
-
+    
     def add(self, product, quantity: int = 1) -> None:
-        if not self._check_addable(product, quantity): return
-
+        """
+        Adds a product to the cart, applies promotion if available, and updates shipping.
+        """
+        if not self._check_addable(product, quantity):
+            return
         slug = str(product.slug)
-
+        promo = self.get_promotion(product, quantity)
         self.cart[slug] = {
             "base_price": str(product.base_price),
             "price": str(product.final_price),
             "quantity": quantity,
-            }
-        if promo := self.get_promotion(product, quantity):
-            self.cart[slug].update({"promotion": promo})
-
-        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
-        
+        }
+        if promo:
+            self.cart[slug]["promotion"] = promo
+        self.cart[slug]["subtotal"] = str(self.get_subtotal(self.cart[slug], promo))
+        governorate = None
         if self.request.user.is_authenticated:
-                governorate = Address.objects.filter(user=self.request.user, is_default=True).first().governorate
-                self.calculate_shipping_cost(product, quantity, governorate)
+            default_address = Address.objects.filter(user=self.request.user, is_default=True).first()
+            if default_address:
+                governorate = default_address.governorate
+        if governorate:
+            self.calculate_shipping_cost(product, quantity, governorate)
+        else:
+            self.shipping["address"] = "No Address yet"
         self.save()
 
     def get_subtotal(self, item, promotion=None):
