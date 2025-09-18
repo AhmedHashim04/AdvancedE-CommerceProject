@@ -3,7 +3,6 @@ from django.core.cache import cache
 from decimal import Decimal
 from django.utils import timezone
 from apps.store.models import Product
-from apps.promotions.models import Promotion
 from apps.shipping.models import Address
 
 
@@ -51,13 +50,6 @@ class ShoppingCart:
             return False
         return True
 
-
-    def get_promotion(self, product, quantity):
-        promo = getattr(product, "promotion", None)
-        if not (promo and promo.is_valid()):
-            return None
-        summary = promo.summary(quantity)
-        return summary
 
     def iterate_cart_items_to_add_shipping_costs_based_on_new_address(self):
         for slug, item in self.cart.items():
@@ -113,29 +105,17 @@ class ShoppingCart:
             "quantity": quantity,
             }
 
-        if promo := self.get_promotion(product, quantity):
-            self.cart[slug].update({"promotion": promo})
-
-        self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
         governorate = Address.objects.filter(user=self.request.user, is_default=True).first().governorate
         
         if self.request.user.is_authenticated and governorate:
                 self.calculate_shipping_cost(product, quantity, governorate)
         self.save()
 
-    def get_subtotal(self, item, promotion=None):
+    def get_subtotal(self, item):
 
         quantity = int(item.get("quantity", 1))
         price = Decimal(item.get("price", "0"))
         subtotal = price * quantity
-        # Handle promotion logic
-        if promotion:
-            # Ensure promotion is a dict before accessing .get
-            if isinstance(promotion, dict) and promotion.get("type") == "BQG":
-                # Buy X Get Y logic
-                gift_price = Decimal(promotion.get("total_gift_price", "0"))
-                subtotal += gift_price
-
         return subtotal
     
     def get_cart_summary(self):
@@ -217,25 +197,3 @@ class ShoppingCart:
         cache.set(user_cart_key, merged_cart, timeout=3600)
         cache.delete(session_cart_key)
         return added_count
-
-    def deactive_promotion(self, product):
-        slug = str(product.slug)
-        item = self.cart.get(slug)
-        if item is None:
-            return
-        if "promotion" in item and isinstance(item["promotion"], dict) and item["promotion"].get("type") == "BQG":
-            item["promotion"] = "disactivated"
-            self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug]))})
-            self.save()
-
-    def reactivate_promotion(self, product):
-        slug = str(product.slug)
-        item = self.cart.get(slug)
-        if item is None:
-            return
-        if item.get("promotion") == "disactivated":
-            quantity = int(item.get("quantity", 1))
-            if promo := self.get_promotion(product, quantity):
-                self.cart[slug].update({"promotion": promo})
-                self.cart[slug].update({"subtotal": str(self.get_subtotal(self.cart[slug], promo))})
-                self.save()

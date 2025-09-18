@@ -107,6 +107,14 @@ router.register("shipping-plans", ShippingPlanViewSet, basename="shipping_plan")
 router.register("shipping-company", ShippingCompanyRequireView, basename="shipping_company_request")
 
 
+from apps.payments.views import CheckoutAPIView,  CapturePayPalOrderAPIView, CreatePayPalOrderAPIView
+
+urlpatterns = [
+    path("checkout/summary/", CheckoutAPIView.as_view(), name="checkout-summary"),
+    path("checkout/create-paypal-order/", CreatePayPalOrderAPIView.as_view(), name="create-paypal-order"),
+    path("checkout/capture-paypal-order/", CapturePayPalOrderAPIView.as_view(), name="capture-paypal-order"),
+]
+
 
 
 router.register('sellers', SellerViewSet, basename='seller')
@@ -115,11 +123,8 @@ router.register('seller-products', ProductViewSet, basename='seller_products')
 urlpatterns += [
     path("", include(router.urls)),
 ]
-# make shipping system
-# add payments system
-# make seller system
+
 # Make Advertisement system
-# link order system with payments and address system
 # make Notification system
 # add loyalty program
 

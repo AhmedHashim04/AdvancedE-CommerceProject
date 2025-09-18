@@ -1,25 +1,27 @@
+from decimal import Decimal
 from django.db import models
 # from django.utils import timezone
 from apps.orders.models import Order
 from apps.sellers.models import Seller
 from django.utils.translation import gettext_lazy as _
-# 
 
-# class Payment(models.Model):
-#     STATUS_CHOICES = [
-#         ("pending", "Pending"),
-#         ("success", "Success"),
-#         ("failed", "Failed"),
-#     ]
 
-#     amount = models.DecimalField(max_digits=10, decimal_places=2)
-#     card_number = models.CharField(max_length=16)
-#     card_holder = models.CharField(max_length=100)
-#     expiration_date = models.CharField(max_length=5)  # MM/YY
-#     cvv = models.CharField(max_length=4)
-#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-#     created_at = models.DateTimeField(default=timezone.now)
 
+
+class Payment(models.Model):
+    """Stores PayPal order / capture ids and raw response for audit."""
+    order = models.ForeignKey("orders.Order", related_name="payments", on_delete=models.CASCADE)
+    paypal_order_id = models.CharField(max_length=255, null=True, blank=True)
+    paypal_capture_id = models.CharField(max_length=255, null=True, blank=True)
+    provider = models.CharField(max_length=50, default="paypal")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    currency = models.CharField(max_length=8, default="EGP")
+    raw_response = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f"Payment {self.provider} - {self.paypal_order_id or self.paypal_capture_id}"
 
 
 class PaymentMethod(models.TextChoices):

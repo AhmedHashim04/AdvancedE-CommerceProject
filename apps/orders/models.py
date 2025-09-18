@@ -1,5 +1,5 @@
 import uuid
-
+from decimal import Decimal
 from django.utils.translation import gettext_lazy as _
 from apps.store.models import Product
 from django.conf import settings
@@ -65,6 +65,27 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+
+
+class SubOrder(models.Model):
+    """Logical grouping inside an Order for a single seller.
+    Each SubOrder will correspond to a PayPal purchase_unit.
+    """
+    order = models.ForeignKey("orders.Order", related_name="suborders", on_delete=models.CASCADE)
+    seller = models.ForeignKey("sellers.Seller", on_delete=models.CASCADE)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    shipping_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    status = models.CharField(max_length=32, default="pending")
+
+
+    class Meta:
+        verbose_name = "SubOrder"
+        verbose_name_plural = "SubOrders"
+
+
+    def __str__(self):
+        return f"SubOrder #{self.id} of Order {self.order.id} for {self.seller}"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
