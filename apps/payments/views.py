@@ -5,7 +5,7 @@ from .serializers import CheckoutSummarySerializer
 from decimal import Decimal
 import requests
 
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny
 from apps.cart.cart import ShoppingCart
 from .utils import build_paypal_payload_from_cart
 from rest_framework import status
@@ -20,7 +20,7 @@ class CheckoutAPIView(APIView):
     """Return the built cart summary and a preview of PayPal payload.
     Frontend will call this to render checkout page.
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         # assume you attach ShoppingCart to request in middleware or instantiate here
@@ -41,7 +41,7 @@ class CreatePayPalOrderAPIView(APIView):
     """Build the payload and call PayPal to create an Order. Return order id and approval link.
     Frontend will redirect user to the approval link.
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         cart = ShoppingCart(request)
@@ -78,7 +78,7 @@ class CapturePayPalOrderAPIView(APIView):
     """Called by frontend after PayPal approval redirect (frontend receives orderID).
     This endpoint captures the PayPal order and creates the real Order/SubOrders/Shipments in DB.
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         order_id = request.data.get("orderID") or request.session.get("paypal_order_id")

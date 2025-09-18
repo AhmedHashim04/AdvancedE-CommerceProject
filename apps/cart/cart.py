@@ -190,7 +190,7 @@ class ShoppingCart:
         
         for plan_id, plan_data in self.shipping.items():
             if not isinstance(plan_data, dict) or "weights" not in plan_data:
-                return
+                continue  # was 'return', should be 'continue'
             
             total_weight = sum(Decimal(str(w)) for w in plan_data["weights"].values())
             base_price = Decimal(plan_data.get("base_price", "0.00"))

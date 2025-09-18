@@ -1,4 +1,3 @@
-
 from apps.store.models import Product
 from apps.shipping.models import ShippingPlan
 from decimal import Decimal
@@ -33,24 +32,20 @@ def build_paypal_payload_from_cart(cart, currency="EGP"):
         raise ValueError("No shipping address provided")
 
     for plan_key, details in shipping_map.items():
-        # details is expected to be a dict with 'base_price' and product slug -> kilos
         if plan_key == "address":
-            continue
+            raise ValueError("No shipping address provided")
 
         plan = _resolve_plan_key(plan_key)
-        # if we couldn't resolve plan, skip to be safe
         if plan is None:
-            continue
+            raise ValueError("Shipping plan error")
 
         items = []
         total_items_price = Decimal("0.00")
         shipping_cost = Decimal(str(details.get("base_price", "0.00")))
 
-        for key, weight_or_val in details.items():
-            if key == "base_price":
-                continue
-            # key expected to be product slug
-            slug = str(key)
+        # Fix: get weights dict
+        weights = details.get("weights", {})
+        for slug, weight_or_val in weights.items():
             try:
                 product = Product.objects.get(slug=slug)
             except Product.DoesNotExist:
