@@ -112,6 +112,7 @@ class ProductSerializer(DynamicFieldsModelSerializer):
     pricing = serializers.SerializerMethodField()
     stock = serializers.SerializerMethodField()
     seo = serializers.SerializerMethodField()
+    shipping_company = serializers.SerializerMethodField()
 
 
     class Meta:
@@ -125,7 +126,7 @@ class ProductSerializer(DynamicFieldsModelSerializer):
             "has_variants", "attributes", "is_featured",
             "rating", "review_count", "views_count", "sales_count",
             "meta_title", "meta_description", "meta_keywords", "seo",
-            "created_at", "updated_at", "reviews"
+            "created_at", "updated_at", "reviews", "shipping_company"
         ]
         read_only_fields = fields
 
@@ -150,3 +151,9 @@ class ProductSerializer(DynamicFieldsModelSerializer):
             "description": obj.meta_description,
             "keywords": obj.meta_keywords,
         }
+
+    def get_shipping_company(self, value=None):
+        if not value:
+            value = self.shipping_company
+            print("Default shipping company assigned:", value)
+        return value

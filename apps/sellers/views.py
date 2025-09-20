@@ -77,6 +77,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         seller = get_object_or_404(Seller, user=self.request.user)
+
         if promotion:= serializer.validated_data.get('promotion'):
             if promotion.seller != seller:
                 return Response({"error": "Invalid promotion for this seller."}, status=status.HTTP_400_BAD_REQUEST)

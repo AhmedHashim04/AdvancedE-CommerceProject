@@ -10,16 +10,22 @@ class SubOrderSerializer(serializers.ModelSerializer):
         model= SubOrder
         fields = "__all__"
 
-
+# TODO enhance serializers
 class SellerSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
-    store_address = AddressSerializer()
     sub_orders = SubOrderSerializer(required=False, many=True)
 
     class Meta:
         model = Seller
         fields = "__all__"
         read_only_fields = ["id", "user", "sub_orders", "is_verified", "created_at"]
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # if instance.shipping_company:
+        #     representation['shipping_company'] = instance.shipping_company.company_name
+        # if instance.address:
+        #     representation['address'] = AddressSerializer(instance.address).data
+        return representation
 
 class ShippingCompanySerializer(serializers.ModelSerializer):
     class Meta:

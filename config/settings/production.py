@@ -70,16 +70,19 @@ LOGGING = {
 }
 
 
-MIDDLEWARE += [
-    'project.rate_limit_logging.RatelimitLoggingMiddleware',
-    'django_ratelimit.middleware.RatelimitMiddleware',
-    'project.middleware.FullCPUMeasureMiddleware',
-    'project.middleware.CPUMeasureMiddleware',
-    'project.middleware.TimerMiddleware',
-]
 
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = "default"
+
+ASGI_APPLICATION = "core.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis://localhost:6379")],
+        },
+    },
+}
 
 
 # CELERY_BROKER_URL = config('REDIS_URL')
