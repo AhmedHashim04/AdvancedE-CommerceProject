@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.core.exceptions import ValidationError
-
+from django.utils.translation import gettext_lazy as _
 
 class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,
@@ -55,7 +55,7 @@ class City(models.Model):
         return f"{self.name_ar} - {self.governorate.name_ar} "
 
 class ShippingCompany(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,unique=True, on_delete=models.CASCADE, related_name='shipping_companies', verbose_name=_("User"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,unique=True, on_delete=models.CASCADE, related_name='shipping_company', verbose_name=_("User"))
     company_name = models.CharField(max_length=150, unique=True)
     company_description = models.TextField(blank=True, null=True)
     company_email = models.EmailField(unique=True, blank=True, null=True)
@@ -76,8 +76,7 @@ class ShippingCompany(models.Model):
     
     def __str__(self):
         return self.company_name
-    from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
+
 
 class ShippingPlan(models.Model):
     company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE, related_name='plans')
@@ -96,8 +95,8 @@ class ShippingPlan(models.Model):
         return f"{self.company.company_name} - {', '.join(governorates)} - {self.base_price} EGP"
 
 class WeightPricing(models.Model):
-    plan = models.OneToOneField(ShippingPlan, on_delete=models.CASCADE, related_name='weight_pricing')
-    min_weight = models.DecimalField(help_text="Minimum weight in kg, null if not applicable", max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Minimum Weight (kg)"))
+    plan = models.OneToOneField(ShippingPlan, unique=True, on_delete=models.CASCADE, related_name='weight_pricing')
+    min_weight = models.DecimalField(help_text="Minimum weight in kg", max_digits=10, decimal_places=2, verbose_name=_("Minimum Weight (kg)"))
     price_per_kilo = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price per Kilo (EGP)"))
 
     
@@ -116,7 +115,11 @@ class WeightPricing(models.Model):
     def __str__(self):
         return f"{self.min_weight}: {self.price_per_kilo} EGP"
     
-
+    def clean(self):
+        if self.min_weight < 0:
+            raise ValidationError("Minimum weight must be non-negative.")
+        if self.price_per_kilo < 0:
+            raise ValidationError("Price per kilo must be non-negative.")
 
 class Shipment(models.Model):
     SHIPMENT_STATUS = (

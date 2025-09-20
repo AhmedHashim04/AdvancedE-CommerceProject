@@ -19,8 +19,9 @@ Seller -- upload product -- >put it into [(category (or no), (brand (or no)] -
         -- add weight ,width ,height ,depth ,has_variants and attributes, attributes
 
          
-Shipper -- require to be Company
-
+Shipper 
+        -- require to be Company
+        -- handle company / plans
 
  -->
 

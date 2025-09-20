@@ -1,5 +1,5 @@
-from .serializers import AddressSerializer, ShippingCompanySerializer, ShippingPlanSerializer
-from .models import Address, ShippingCompany, ShippingPlan
+from .serializers import AddressSerializer, ShippingCompanySerializer, ShippingPlanSerializer, WeightPricingSerializer
+from .models import Address, ShippingCompany, ShippingPlan, WeightPricing
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -117,15 +117,22 @@ class ShippingPlanViewSet(viewsets.ModelViewSet):
             raise PermissionError("You must be a verified shipping company to create a shipping plan.")
         serializer.save(company=company)
 
+class WeightPricingViewSet(viewsets.ModelViewSet):
+    serializer_class = WeightPricingSerializer
+    permission_classes = [IsAuthenticated]
 
-"""
-    Scenario of shipping cost calculation:
-        customer add product if product.shipping_plan in cart_shipping_plans 
-        calculate weight(add all shipping plans weights) if total_shipping_weight > plan.min_weight 
-        calculate shipping_plan_weight_cost and change flag to true 
-        and every product belong to this shipping plan calculate_shipping_plan_weight_costs again
-        then calculate total shipping cost by sum all shipping_plan_costs + shipping_plan_weight_costs
-
-    When removing a product
-        
-"""
+    def get_queryset(self):
+        # Only allow access to WeightPricing for ShippingPlans owned by the current user
+        return WeightPricing.objects.filter(plan__company__user=self.request.user)
+    
+    def perform_create(self, serializer):
+        plan_id = self.request.data.get("plan")
+        try:
+            company = ShippingCompany.objects.get(user=self.request.user, is_verified=True)
+            plan = ShippingPlan.objects.get(id=plan_id, company=company)
+            print(plan,"--------------------")
+        except ShippingPlan.DoesNotExist:
+            raise PermissionError("You can only add weight pricing to your own verified shipping plans.")
+        serializer.save(plan=plan)
+    
+ 

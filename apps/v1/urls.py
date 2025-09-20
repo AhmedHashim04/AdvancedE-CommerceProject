@@ -96,10 +96,11 @@ urlpatterns += [
     path("orders/<uuid:id>/cancel/", OrderCancelView.as_view(), name="order-cancel"),
 ]
 
-from apps.shipping.views import AddressViewSet,ShippingPlanViewSet, ShippingCompanyRequireView
+from apps.shipping.views import AddressViewSet,ShippingPlanViewSet, ShippingCompanyRequireView, WeightPricingViewSet
 router.register("address", AddressViewSet, basename="address")
 router.register("shipping-plan", ShippingPlanViewSet, basename="shipping_plan")
 router.register("shipping-company", ShippingCompanyRequireView, basename="shipping_company_request")
+router.register("weight-pricing", WeightPricingViewSet, basename="weight_pricing")
 
 
 from apps.payments.views import CheckoutAPIView,  CapturePayPalOrderAPIView, CreatePayPalOrderAPIView

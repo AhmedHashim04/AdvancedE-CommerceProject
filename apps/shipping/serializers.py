@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from .models import Address, Governorate, City, ShippingCompany, ShippingPlan
+from .models import Address, Governorate, City, ShippingCompany, ShippingPlan, WeightPricing
 from django.core.exceptions import ValidationError
 
 class GovernorateSerializer(serializers.ModelSerializer):
@@ -76,3 +76,12 @@ class ShippingPlanSerializer(serializers.ModelSerializer):
             )
 
         return data
+
+class WeightPricingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeightPricing
+        fields = "__all__"
+        read_only_fields = ("created_at", "updated_at")
+
+
+
