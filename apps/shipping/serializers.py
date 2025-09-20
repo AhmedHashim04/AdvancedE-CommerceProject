@@ -30,6 +30,11 @@ class AddressSerializer(serializers.ModelSerializer):
         representation['governorate'] = GovernorateSerializer(instance.governorate).data
         representation['city'] = CitySerializer(instance.city).data
         return representation
+
+    # def create(self, validated_data):
+    #     if validated_data.get('is_default', False):
+    #         Address.objects.filter(user=user, is_default=True).update(is_default=False)
+    #     return super().create(validated_data)
     
 class ShippingCompanySerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,17 +42,37 @@ class ShippingCompanySerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("user", "created_at", "updated_at")
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.company_address:
+            representation['company_address'] = AddressSerializer(instance.company_address).data
+        return representation
+
+class WeightPricingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeightPricing
+        fields = "__all__"
+        read_only_fields = ("created_at", "updated_at")
+
+
+
 class ShippingPlanSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = ShippingPlan
-        fields = "__all__"
-        read_only_fields = ("company", "created_at", "updated_at", "is_active")
+        fields = ["company", "governorates", "estimated_days", "base_price", "weight_pricing", "is_active", "created_at"]
+        read_only_fields = ("company", "created_at", "is_active")
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['company'] = instance.company.company_name
         representation['governorates'] = [i.name_ar for i in instance.governorates.all()]
         return representation
+    
+    def get_weight_pricing(self, obj):
+        if hasattr(obj, 'weight_pricing'):
+            return WeightPricingSerializer(obj.weight_pricing).data
+        return None
 
     def validate(self, data):
         company = (
@@ -76,12 +101,3 @@ class ShippingPlanSerializer(serializers.ModelSerializer):
             )
 
         return data
-
-class WeightPricingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WeightPricing
-        fields = "__all__"
-        read_only_fields = ("created_at", "updated_at")
-
-
-

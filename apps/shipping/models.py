@@ -84,6 +84,7 @@ class ShippingPlan(models.Model):
     base_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Base Price"))
     estimated_days = models.PositiveIntegerField(verbose_name=_("Estimated Delivery Days"))
     is_active = models.BooleanField(default=True, verbose_name=_("Active"))
+    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         verbose_name = _("Shipping Plan")

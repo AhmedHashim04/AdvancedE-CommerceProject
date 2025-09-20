@@ -65,7 +65,7 @@ class AddressViewSet(viewsets.ModelViewSet):
         address.save(update_fields=["is_default"])
         return Response({"status": "Now it's the default address"}, status=status.HTTP_200_OK)
 
-class ShippingCompanyRequireView(viewsets.ModelViewSet):
+class ShippingCompanyViewSet(viewsets.ModelViewSet):
     serializer_class = ShippingCompanySerializer
     permission_classes = [IsAuthenticated]
 
@@ -78,15 +78,13 @@ class ShippingCompanyRequireView(viewsets.ModelViewSet):
         return Response({"status": "Request sent successfully. Please wait for approval."}, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, **kwargs):
-        return Response({"error": "You cannot view this."}, status=status.HTTP_403_FORBIDDEN)
-    
-    def retrieve(self, request, *args, **kwargs):
         if ShippingCompany.objects.filter(user=request.user).exists():
             instance = ShippingCompany.objects.get(user=request.user)
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
         return Response({"error": "You do not have a shipping company."}, status=status.HTTP_404_NOT_FOUND)
-    
+    def retrieve(self, request, *args, **kwargs):
+        return Response({"error": "You cannot view this."}, status=status.HTTP_403_FORBIDDEN)
     def update(self, request, *args, **kwargs):
         if ShippingCompany.objects.filter(user=request.user).exists():
             instance = ShippingCompany.objects.get(user=request.user)
@@ -94,7 +92,7 @@ class ShippingCompanyRequireView(viewsets.ModelViewSet):
             serializer.is_verified = False
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response({"status": "Request updated successfully. Please wait for approval."}, status=status.HTTP_200_OK)
+            return Response({"status": "Request updated successfully."}, status=status.HTTP_200_OK)
         return Response({"error": "You do not have a shipping company."}, status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, *args, **kwargs):
@@ -103,7 +101,7 @@ class ShippingCompanyRequireView(viewsets.ModelViewSet):
             instance.delete()
             return Response({"status": "Shipping company deleted successfully."}, status=status.HTTP_200_OK)
         return Response({"error": "You do not have a shipping company."}, status=status.HTTP_404_NOT_FOUND)
-
+    
 class ShippingPlanViewSet(viewsets.ModelViewSet):
     serializer_class = ShippingPlanSerializer
     permission_classes = [IsAuthenticated]
