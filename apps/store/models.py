@@ -4,7 +4,7 @@ from django.utils.text import slugify
 from apps.sellers.models import Seller
 from apps.shipping.models import ShippingPlan, ShippingCompany
 from apps.promotions.models import Promotion
-
+from core.utils import generate_unique_slug
 from django.utils.translation import gettext_lazy as _
 
 # -------------------------------------
@@ -96,8 +96,8 @@ class Product(SEOFieldsMixin, models.Model):
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text=_("Stock Keeping Unit: unique identifier for the product"))
     barcode = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text=_("Barcode: unique product code for scanning and inventory"))
 
-    brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, related_name="products")
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
+    brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, blank=True, related_name="products")
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
     #TODO : make seller chose shipping plan for his product from his shipping companies
     shipping_company = models.ForeignKey(ShippingCompany, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Default Shipping Company", help_text="Default shipping company for this product")
@@ -144,10 +144,9 @@ class Product(SEOFieldsMixin, models.Model):
     review_count = models.PositiveIntegerField(verbose_name="Review Count", default=0, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)  
+        self.slug = generate_unique_slug(self, self.name)
         super().save(*args, **kwargs)
 
     def get_seo_title(self):

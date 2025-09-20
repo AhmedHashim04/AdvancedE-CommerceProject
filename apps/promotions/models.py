@@ -175,18 +175,8 @@ class Promotion(BasePromotion):
         choices=PromotionType.choices,
         help_text="Type of promotion"
     )
-
-    percentage_amount = models.PositiveIntegerField(
-        null=True, blank=True,
-        help_text="Percentage discount (1-100)",
-        validators=[MinValueValidator(1), MaxValueValidator(100)]
-    )
-
-    fixed_amount = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        null=True, blank=True,
-        help_text="Fixed discount amount (>0)"
-    )
+    
+    value = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True,help_text="discount amount if percentage(0:100) or fixed(>0)")
 
     bqg_promotion = models.OneToOneField(
         BQGPromotion, on_delete=models.CASCADE,
@@ -219,21 +209,27 @@ class Promotion(BasePromotion):
         """Ensure only relevant fields are filled based on type."""
 
         if self.type == PromotionType.PERCENTAGE:
-            if not self.percentage_amount:
+            if not self.value:
                 raise ValidationError("Percentage amount is required for percentage promotions.")
-            if self.fixed_amount or self.bqg_promotion: 
-                raise ValidationError("Percentage promotion cannot have fixed/bqg fields.")
+            if not (0 < self.value <= 100):
+                raise ValidationError("Percentage amount must be between 0 and 100 for percentage promotions.")
+            if self.bqg_promotion:
+                raise ValidationError("Percentage promotion cannot have bqg fields.")
 
         elif self.type == PromotionType.FIXED:
-            if not self.fixed_amount or self.fixed_amount <= Decimal("0.00"):
+            if not self.value:
                 raise ValidationError("Fixed amount must be > 0 for fixed promotions.")
-            if self.percentage_amount or self.bqg_promotion: 
-                raise ValidationError("Fixed promotion cannot have percentage/bqg fields.")
+            
+            if self.value <= Decimal("0.00"):
+                raise ValidationError("Fixed amount must be greater than 0 for fixed promotions.")
+            
+            if self.bqg_promotion:
+                raise ValidationError("Fixed promotion cannot have bqg fields.")
 
         elif self.type == PromotionType.BQG:
             if not self.bqg_promotion:
                 raise ValidationError("BQG promotion details are required.")
-            if self.percentage_amount or self.fixed_amount: 
+            if self.value:
                 raise ValidationError("BQG promotion cannot have percentage/fixed fields.")
 
         else:
@@ -273,12 +269,12 @@ class Promotion(BasePromotion):
 
         discounted_price = price
 
-        if self.type == PromotionType.PERCENTAGE and self.percentage_amount is not None:
-            discount_fraction = Decimal(self.percentage_amount) / Decimal("100")
+        if self.type == PromotionType.PERCENTAGE and self.value is not None:
+            discount_fraction = Decimal(self.value) / Decimal("100")
             discounted_price -= discounted_price * discount_fraction
 
-        elif self.type == PromotionType.FIXED and self.fixed_amount is not None:
-            discounted_price -= self.fixed_amount
+        elif self.type == PromotionType.FIXED and self.value is not None:
+            discounted_price -= self.value
 
         return max(discounted_price, Decimal("0")).quantize(DECIMAL_PRECISION, rounding=ROUND_HALF_UP)
 
@@ -289,9 +285,7 @@ class Promotion(BasePromotion):
             "type": self.type,
         }
         if self.type == PromotionType.PERCENTAGE:
-            base["amount"] = self.percentage_amount
-        elif self.type == PromotionType.FIXED:
-            base["amount"] = self.fixed_amount
+            base["amount"] = self.value
         elif self.type == PromotionType.BQG and self.bqg_promotion:
             base.update(self.bqg_promotion.summary(bought_qty))
 
@@ -299,9 +293,9 @@ class Promotion(BasePromotion):
 
     def __str__(self):
         if self.type == PromotionType.PERCENTAGE:
-            return f"{self.percentage_amount}% off"
+            return f"{self.value}% off"
         elif self.type == PromotionType.FIXED:
-            return f"${self.fixed_amount} off"
+            return f"${self.value} off"
         elif self.type == PromotionType.BQG:
             return str(self.bqg_promotion)
         return "Promotion (unspecified)"

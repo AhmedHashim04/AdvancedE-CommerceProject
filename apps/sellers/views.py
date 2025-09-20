@@ -4,13 +4,10 @@ from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from .models import Seller
 from apps.store.models import Product
-from apps.sellers.serializers import SellerSerializer
-from apps.store.serializers import ProductSerializer
-from apps.sellers.serializers import PromotionSerializer
+from apps.sellers.serializers import SellerSerializer, PromotionSellerSerializer, ProductSellerSerializer, SubOrderSerializer
 from apps.promotions.models import Promotion
 from apps.store.models import Brand, Category, Tag
 from apps.store.serializers import BrandSerializer, CategorySerializer, TagSerializer
-
 
 class IsSellerOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -69,23 +66,27 @@ class SellerViewSet(viewsets.ModelViewSet):
             return Response({"error": "You do not have a seller."}, status=status.HTTP_404_NOT_FOUND)
 
 class ProductViewSet(viewsets.ModelViewSet):
-    serializer_class = ProductSerializer
+    serializer_class = ProductSellerSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Product.objects.filter(seller__user=self.request.user)
+    @action(detail=False, methods=['get'], url_path='orders')
+    def orders(self, request):
+        """
+        Returns the current user's seller orders.
+        """
+        try:
+            instance = Seller.objects.get(user=request.user)
+            orders = instance.sub_orders.all()
+            serializer = SubOrderSerializer(orders, many=True)
+            return Response(serializer.data)
+        except Seller.DoesNotExist:
+            return Response({"error": "You do not have a seller."}, status=status.HTTP_404_NOT_FOUND)
 
-    def perform_create(self, serializer):
-        seller = get_object_or_404(Seller, user=self.request.user)
-
-        if promotion:= serializer.validated_data.get('promotion'):
-            if promotion.seller != seller:
-                return Response({"error": "Invalid promotion for this seller."}, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save(seller=seller)
-        
-
-class AddPromotionViewSet(viewsets.ModelViewSet):
-    serializer_class = PromotionSerializer
+class PromotionViewSet(viewsets.ModelViewSet):
+    serializer_class = PromotionSellerSerializer
     permission_classes = [permissions.IsAuthenticated , IsSellerOwner]
 
     def get_queryset(self):

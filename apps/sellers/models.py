@@ -26,8 +26,8 @@ class SubOrder(models.Model):
     """Logical grouping inside an Order for a single seller.
     Each SubOrder will correspond to a PayPal purchase_unit.
     """
-    order = models.ForeignKey("orders.Order", related_name="suborders", on_delete=models.CASCADE)
-    seller = models.ForeignKey("sellers.Seller", on_delete=models.CASCADE)
+    order = models.ForeignKey("orders.Order", related_name="sub_orders", on_delete=models.CASCADE)
+    seller = models.ForeignKey("sellers.Seller",related_name="sub_orders", on_delete=models.CASCADE)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     shipping_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     status = models.CharField(max_length=32, default="pending")

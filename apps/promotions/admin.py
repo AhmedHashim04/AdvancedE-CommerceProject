@@ -11,7 +11,7 @@ class BQGPromotionAdmin(admin.ModelAdmin):
 class PromotionAdmin(admin.ModelAdmin):
     list_display = (
         "type", "is_active", "start_date", "end_date",
-        "usage_count", "usage_limit", "percentage_amount", "fixed_amount", "bqg_promotion"
+        "usage_count", "usage_limit", "value", "bqg_promotion"
     )
     search_fields = ("id",)
     list_filter = ("type", "is_active", "start_date", "end_date")

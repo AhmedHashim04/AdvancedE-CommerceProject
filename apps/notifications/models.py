@@ -28,14 +28,10 @@ class Notification(models.Model):
         ]
     
     actor = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='actor_notifications')
-    verb = models.CharField(max_length=64)  # human readable short verb
+    verb = models.CharField(max_length=64)
     notif_type = models.CharField(max_length=50, choices=NOTIF_TYPES)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
-    # optional generic relation to link to order/product/etc
-    content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True, on_delete=models.SET_NULL)
-    object_id = models.CharField(max_length=255, null=True, blank=True)
-    data = models.JSONField(default=dict, blank=True)  # payload for frontend (IDs, urls, meta)
     # indexes for queries
     class Meta:
         ordering = ['-created_at']

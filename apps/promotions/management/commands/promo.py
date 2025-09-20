@@ -24,8 +24,7 @@ class Command(BaseCommand):
                 fixed_amount=None,
             )
             Promotion.objects.create(
-                percentage_amount=None,
-                fixed_amount=None,
+                value=None,
                 bqg=bqg,
                 is_active=True,
                 start_date=timezone.now() - timedelta(days=1),
@@ -37,8 +36,7 @@ class Command(BaseCommand):
         # Create percentage-only promotions (no fixed, no BQG)
         for _ in range(3):
             Promotion.objects.create(
-                percentage_amount=Decimal(fake.pydecimal(left_digits=2, right_digits=2, positive=True)),
-                fixed_amount=None,
+                value=None,
                 bqg=None,
                 is_active=True,
                 start_date=timezone.now() - timedelta(days=1),
@@ -50,8 +48,7 @@ class Command(BaseCommand):
         # Create fixed-only promotions (no percentage, no BQG)
         for _ in range(2):
             Promotion.objects.create(
-                percentage_amount=None,
-                fixed_amount=Decimal(fake.pydecimal(left_digits=2, right_digits=2, positive=True)),
+                value=None,
                 bqg=None,
                 is_active=True,
                 start_date=timezone.now() - timedelta(days=1),

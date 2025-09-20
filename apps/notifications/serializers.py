@@ -14,6 +14,5 @@ class NotificationRecipientSerializer(serializers.ModelSerializer):
             'id': n.pk,
             'verb': n.verb,
             'type': n.notif_type,
-            'data': n.data,
             'created_at': n.created_at
         }

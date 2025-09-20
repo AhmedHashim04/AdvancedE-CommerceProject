@@ -114,16 +114,15 @@ urlpatterns += [
 from rest_framework.routers import DefaultRouter
 from apps.sellers.views import (
     SellerViewSet,
-    ProductViewSet, RequireBrandViewSet, RequireCategoryViewSet, RequireTagViewSet
+    ProductViewSet, RequireBrandViewSet, RequireCategoryViewSet, RequireTagViewSet, PromotionViewSet
 )
 
 router.register('required-brands', RequireBrandViewSet, basename='required_brands')
 router.register('required-categories', RequireCategoryViewSet, basename='required_categories')
 router.register('required-tags', RequireTagViewSet, basename='required_tags')
-
-
 router.register('sellers', SellerViewSet, basename='seller')
 router.register('seller-products', ProductViewSet, basename='seller_products')
+router.register('seller-promotions', PromotionViewSet, basename='seller_promotions')
 
 urlpatterns += [
     path("", include(router.urls)),

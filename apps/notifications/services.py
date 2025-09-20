@@ -35,7 +35,6 @@ def create_order_notifications(order):
                     'notification_id': notif.pk,
                     'notif_type': notif.notif_type,
                     'verb': notif.verb,
-                    'data': notif.data,
                     'created_at': str(notif.created_at),
                 }
             }

@@ -1,5 +1,6 @@
 
 from rest_framework import serializers
+from django.utils.text import slugify
 
 def get_client_ip(request):
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -14,6 +15,27 @@ def get_client_ip(request):
 class EmptySerializer(serializers.Serializer):
     pass
 
+
+
+def generate_unique_slug(instance, value, slug_field_name='slug'):
+    """
+    Generates a unique slug for a model instance.
+    - instance: The model instance.
+    - value: The value to slugify (e.g., name).
+    - slug_field_name: The name of the slug field on the model.
+    """
+    base_slug = slugify(value)
+    slug = base_slug
+    counter = 1
+    ModelClass = instance.__class__
+    # Exclude current instance if updating
+    qs = ModelClass.objects.all()
+    if instance.pk:
+        qs = qs.exclude(pk=instance.pk)
+    while qs.filter(**{slug_field_name: slug}).exists():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+    return slug
 
 COUNTRY_CHOICES = [
         ('AF', 'Afghanistan'),
