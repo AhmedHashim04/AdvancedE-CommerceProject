@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from paypal import PayPalClient
+from .paypal import PayPalClient
 from .serializers import CheckoutSummarySerializer
 from decimal import Decimal
 import requests
@@ -12,7 +12,8 @@ from rest_framework import status
 from django.db import transaction
 from apps.payments.models import Payment
 from apps.shipping.models import Shipment, ShipmentItem, ShippingPlan
-from apps.orders.models import Order as OrderModel, SubOrder
+from apps.orders.models import Order
+from apps.sellers.models import SubOrder
 from apps.store.models import Product
 from apps.shipping.models import Address
 
@@ -100,7 +101,7 @@ class CapturePayPalOrderAPIView(APIView):
                     return Response({"detail": "Cart empty"}, status=status.HTTP_400_BAD_REQUEST)
 
                 # create top-level Order model
-                order = OrderModel.objects.create(
+                order = Order.objects.create(
                     user=request.user if request.user.is_authenticated else None,
                     address=getattr(request, "selected_address", None) or request.session.get("selected_address_id") and Address.objects.get(id=request.session.get("selected_address_id")),
                     total_price=Decimal(str(capture_resp.get("purchase_units", [{}])[0].get("payments", {}).get("captures", [{}])[0].get("amount", {}).get("value", "0.00"))),

@@ -7,6 +7,33 @@ from apps.store.models import (
 from apps.promotions.models import Promotion
 
 
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = [
+            "id", "name", "slug", "description", "logo",
+            "required_by", "is_active"
+        ]
+        read_only_fields = ["id", "slug"]
+
+class CategorySerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), allow_null=True, required=False)
+    class Meta:
+        model = Category
+        fields = [
+            "id", "name", "slug", "parent", "description", "image",
+            "required_by", "is_active"
+        ]
+        read_only_fields = ["id", "slug"]
+
+# class TagSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Tag
+#         fields = [
+#             "id", "name", "slug", "required_by", "is_active"
+#         ]
+#         read_only_fields = ["id", "slug"]
+
 # --------------------------
 # Utility: Dynamic Fields
 # --------------------------

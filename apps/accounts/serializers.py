@@ -53,8 +53,6 @@ class RegisterSerializer(serializers.Serializer):
         user.save()
         return user
 
-
-
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_blank=False)
     password = serializers.CharField(style={'input_type': 'password'})
@@ -142,5 +140,4 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
-
 

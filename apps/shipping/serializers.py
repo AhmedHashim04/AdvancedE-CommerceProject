@@ -1,8 +1,24 @@
 
 from rest_framework import serializers
-from .models import Address, ShippingCompany, ShippingPlan
+from .models import Address, Governorate, City, ShippingCompany, ShippingPlan
+
+class GovernorateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Governorate
+        fields = ["name_ar", "name_en"]
+        read_only_fields = ("id", "governorate", "name_ar", "name_en", "code")
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields =  ["name_ar", "name_en"]
+        read_only_fields = ("id", "city", "name_ar", "name_en", "code")
+
 
 class AddressSerializer(serializers.ModelSerializer):
+    governorate = GovernorateSerializer()
+    city = CitySerializer()
+    
     class Meta:
         model = Address
         fields = "__all__"

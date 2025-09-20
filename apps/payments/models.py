@@ -1,8 +1,8 @@
 from decimal import Decimal
 from django.db import models
-from django.utils import timezone
-from apps.orders.models import Order
-from apps.sellers.models import Seller
+# from django.utils import timezone
+# from apps.orders.models import Order
+# from apps.sellers.models import Seller
 from django.utils.translation import gettext_lazy as _
 
 class Payment(models.Model):

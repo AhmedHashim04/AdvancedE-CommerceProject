@@ -55,12 +55,12 @@ class City(models.Model):
 
 class ShippingCompany(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,unique=True, on_delete=models.CASCADE, related_name='shipping_companies', verbose_name=_("User"))
-    name = models.CharField(max_length=100, verbose_name=_("Shipping Company Name"))
+    company_name = models.CharField(max_length=150, unique=True)
     company_description = models.TextField(blank=True, null=True)
+    company_email = models.EmailField(unique=True, blank=True, null=True)
+    company_phone = models.CharField(max_length=20)
+    company_address = models.ForeignKey("shipping.Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
     logo = models.ImageField(upload_to='shipping_logos/', null=True, blank=True)
-    address = models.ForeignKey("shipping.Address", verbose_name=_("Address"), on_delete=models.CASCADE, blank=True, null=True)
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20)
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -74,7 +74,7 @@ class ShippingCompany(models.Model):
         verbose_name_plural = _("Shipping Companies")
     
     def __str__(self):
-        return self.name
+        return self.company_name
     
 class ShippingPlan(models.Model):
     company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE, related_name='plans')

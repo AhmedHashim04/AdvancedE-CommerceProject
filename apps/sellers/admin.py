@@ -4,9 +4,9 @@ from .models import Seller
 
 @admin.register(Seller)
 class SellerAdmin(admin.ModelAdmin):
-    list_display = ("store_name", "user", "phone", "is_verified", "created_at")
+    list_display = ("store_name", "user", "store_phone", "is_verified", "created_at")
     list_filter = ("is_verified", "created_at")
-    search_fields = ("store_name", "user__username", "phone")
+    search_fields = ("store_name", "user__username", "store_phone")
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
 

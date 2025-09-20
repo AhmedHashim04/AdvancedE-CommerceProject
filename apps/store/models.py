@@ -16,7 +16,9 @@ class Brand(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to="brands/logos/", blank=True, null=True)
-
+    required_by = models.ForeignKey(Seller, blank=True, null=True, related_name="required_brands", help_text="Sellers who require this brand", on_delete=models.SET_NULL)
+    is_active = models.BooleanField(default=True)
+    
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
@@ -31,7 +33,9 @@ class Category(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='subcategories')
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
-
+    required_by = models.ForeignKey(Seller, blank=True, null=True, related_name="required_categories", help_text="Sellers who require this category", on_delete=models.SET_NULL)
+    is_active = models.BooleanField(default=True)
+    
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
@@ -43,6 +47,8 @@ class Category(models.Model):
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(unique=True, blank=True)
+    required_by = models.ForeignKey(Seller, blank=True, null=True, related_name="required_tags", help_text="Sellers who require this tag", on_delete=models.SET_NULL)
+    is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -93,9 +99,17 @@ class Product(SEOFieldsMixin, models.Model):
     brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, related_name="products")
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name="products", db_index=True)
     tags = models.ManyToManyField('Tag', blank=True)
-
+    #TODO : make seller chose shipping plan for his product from his shipping companies
     shipping_company = models.ForeignKey(ShippingCompany, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Default Shipping Company", help_text="Default shipping company for this product")
-    promotion = models.ForeignKey(Promotion, on_delete=models.SET_NULL, null=True, related_name="products")
+    promotion = models.ForeignKey(
+        Promotion,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="products",
+        limit_choices_to=models.Q(is_active=True),
+        blank=True
+    )
+
     base_price = models.DecimalField(default=0, max_digits=10, decimal_places=2)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
@@ -118,18 +132,18 @@ class Product(SEOFieldsMixin, models.Model):
     attributes = models.JSONField(blank=True, null=True)
     color_options = models.ManyToManyField('ProductColor', blank=True)
 
-    rating = models.DecimalField(verbose_name="Average Rating", max_digits=2, decimal_places=1, default=0, blank=True, null=True)
-    review_count = models.PositiveIntegerField(verbose_name="Review Count", default=0, blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_on_sale = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
+    
+    is_active = models.BooleanField(default=True)
 
     views_count = models.PositiveIntegerField(default=0)
     sales_count = models.PositiveIntegerField(default=0)
-
-    is_on_sale = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_featured = models.BooleanField(default=False)
+    rating = models.DecimalField(verbose_name="Average Rating", max_digits=2, decimal_places=1, default=0, blank=True, null=True)
+    review_count = models.PositiveIntegerField(verbose_name="Review Count", default=0, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -145,6 +159,10 @@ class Product(SEOFieldsMixin, models.Model):
     @property
     def is_in_stock(self):
         return self.stock_quantity > 0
+
+    def get_promotion_queryset(self):
+        # Helper for admin/forms: limit to this product's seller promotions
+        return Promotion.objects.filter(is_active=True, seller=self.seller)
 
     def get_volume(self):
         if self.width and self.height and self.depth:

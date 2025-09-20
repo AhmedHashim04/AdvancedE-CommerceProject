@@ -1,18 +1,25 @@
 from rest_framework import serializers
 
 from apps.shipping.models import ShippingCompany
-from .models import Seller
+from .models import Seller, SubOrder
 from apps.shipping.serializers import AddressSerializer, ShippingCompanySerializer, ShippingPlanSerializer
 from apps.promotions.models import Promotion , BQGPromotion
 
+class SubOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= SubOrder
+        fields = "__all__"
+
+
 class SellerSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
-    address = AddressSerializer()
+    store_address = AddressSerializer()
+    sub_orders = SubOrderSerializer(required=False, many=True)
 
     class Meta:
         model = Seller
         fields = "__all__"
-        read_only_fields = ["id", "user",  "is_verified", "created_at"]
+        read_only_fields = ["id", "user", "sub_orders", "is_verified", "created_at"]
 
 class ShippingCompanySerializer(serializers.ModelSerializer):
     class Meta:

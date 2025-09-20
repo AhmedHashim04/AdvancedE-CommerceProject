@@ -1,9 +1,26 @@
 <!-- 
-                          ->give him difult shipping plan 
+                          -> give him difult shipping plan 
                          |
-Seller -- upload product |
+Seller -- upload product -- >put it into [(category (or no), (brand (or no)] - 
                          |
                           -> change shipping plan
+        
+        -- require to add(tag/category/brand)
+        -- require to be Seller 
+        -- choose(availble color to his product)
+        -- add images to his product
+        -- add (name/description/short_description/sku/barcode)
+        -- choose shipping company to make product 
+        -- seller chose shipping plan for his product from his shipping companies
+        -- add base_price and (cost_price or not)
+        -- add his product stock_quantity and low_stock_threshold that recive notify base on it
+        -- allow_backorder or no
+        -- add his main_image
+        -- add weight ,width ,height ,depth ,has_variants and attributes, attributes
+
+         
+Shipper -- require to be Company
+
 
  -->
 

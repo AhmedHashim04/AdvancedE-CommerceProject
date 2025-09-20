@@ -5,37 +5,64 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.utils import get_client_ip
-
-
-
 class AddressViewSet(viewsets.ModelViewSet):
-
     serializer_class = AddressSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        if self.request.user.is_authenticated:
-            return Address.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.is_authenticated:
+            return Address.objects.filter(user=user)
+        ip = get_client_ip(self.request)
+        return Address.objects.filter(ip_address=ip)
+
+    def destroy(self, request, *args, **kwargs):
+        address = self.get_object()
+        if request.user.is_authenticated:
+            if address.user == request.user:
+                super().destroy(request, *args, **kwargs)
+                return Response({"status": "Address deleted successfully"}, status=status.HTTP_200_OK)
+            return Response({"error": "You cannot delete this address"}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Address.objects.filter(ip_address=get_client_ip(self.request))
+            ip = get_client_ip(request)
+            if address.ip_address == ip:
+                super().destroy(request, *args, **kwargs)
+                return Response({"status": "Address deleted successfully"}, status=status.HTTP_200_OK)
+            return Response({"error": "You cannot delete this address"}, status=status.HTTP_403_FORBIDDEN)
 
     def perform_create(self, serializer):
-        if self.request.user.is_authenticated:
-            serializer.save(user=self.request.user)
+        user = self.request.user
+        if user.is_authenticated:
+            serializer.save(user=user)
         else:
             serializer.save(ip_address=get_client_ip(self.request))
 
+    def perform_update(self, serializer):
+        # Ensure only the owner (user or IP) can update
+        address = self.get_object()
+        user = self.request.user
+        if user.is_authenticated:
+            if address.user != user:
+                raise PermissionError("You cannot update this address.")
+            serializer.save(user=user)
+        else:
+            ip = get_client_ip(self.request)
+            if address.ip_address != ip:
+                raise PermissionError("You cannot update this address.")
+            serializer.save(ip_address=ip)
+
     @action(detail=True, methods=["post"])
     def set_default(self, request, pk=None):
-
         address = self.get_object()
-        if self.request.user.is_authenticated:
-            Address.objects.filter(user=request.user, is_default=True).update(is_default=False)
+        user = request.user
+        if user.is_authenticated:
+            Address.objects.filter(user=user, is_default=True).exclude(pk=address.pk).update(is_default=False)
         else:
-            Address.objects.filter(ip_address=get_client_ip(self.request), is_default=True).update(is_default=False)
+            ip = get_client_ip(request)
+            Address.objects.filter(ip_address=ip, is_default=True).exclude(pk=address.pk).update(is_default=False)
         address.is_default = True
-        address.save()
-        return Response({"status": "تم تعيين العنوان كافتراضي"}, status=status.HTTP_200_OK)
+        address.save(update_fields=["is_default"])
+        return Response({"status": "Now it's the default address"}, status=status.HTTP_200_OK)
 
 class ShippingCompanyRequireView(viewsets.ModelViewSet):
     serializer_class = ShippingCompanySerializer

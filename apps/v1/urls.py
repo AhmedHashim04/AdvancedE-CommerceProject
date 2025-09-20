@@ -95,26 +95,30 @@ urlpatterns += [
     path("orders/create/", OrderCreateView.as_view(), name="order-create"),
     path("orders/<uuid:id>/cancel/", OrderCancelView.as_view(), name="order-cancel"),
 ]
-from rest_framework.routers import DefaultRouter
-from apps.sellers.views import (
-    SellerViewSet,
-    ProductViewSet,
-)
 
 from apps.shipping.views import AddressViewSet,ShippingPlanViewSet, ShippingCompanyRequireView
-router.register("addresses", AddressViewSet, basename="address")
+router.register("address", AddressViewSet, basename="address")
 router.register("shipping-plans", ShippingPlanViewSet, basename="shipping_plan")
 router.register("shipping-company", ShippingCompanyRequireView, basename="shipping_company_request")
 
 
 from apps.payments.views import CheckoutAPIView,  CapturePayPalOrderAPIView, CreatePayPalOrderAPIView
 
-urlpatterns = [
+urlpatterns += [
     path("checkout/summary/", CheckoutAPIView.as_view(), name="checkout-summary"),
     path("checkout/create-paypal-order/", CreatePayPalOrderAPIView.as_view(), name="create-paypal-order"),
     path("checkout/capture-paypal-order/", CapturePayPalOrderAPIView.as_view(), name="capture-paypal-order"),
 ]
 
+from rest_framework.routers import DefaultRouter
+from apps.sellers.views import (
+    SellerViewSet,
+    ProductViewSet, RequireBrandViewSet, RequireCategoryViewSet, RequireTagViewSet
+)
+
+router.register('required-brands', RequireBrandViewSet, basename='required_brands')
+router.register('required-categories', RequireCategoryViewSet, basename='required_categories')
+router.register('required-tags', RequireTagViewSet, basename='required_tags')
 
 
 router.register('sellers', SellerViewSet, basename='seller')
