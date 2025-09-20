@@ -98,7 +98,7 @@ urlpatterns += [
 
 from apps.shipping.views import AddressViewSet,ShippingPlanViewSet, ShippingCompanyRequireView
 router.register("address", AddressViewSet, basename="address")
-router.register("shipping-plans", ShippingPlanViewSet, basename="shipping_plan")
+router.register("shipping-plan", ShippingPlanViewSet, basename="shipping_plan")
 router.register("shipping-company", ShippingCompanyRequireView, basename="shipping_company_request")
 
 

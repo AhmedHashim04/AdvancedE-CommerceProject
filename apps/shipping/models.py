@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 
 class Address(models.Model):
@@ -75,10 +76,12 @@ class ShippingCompany(models.Model):
     
     def __str__(self):
         return self.company_name
-    
+    from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
 class ShippingPlan(models.Model):
     company = models.ForeignKey(ShippingCompany, on_delete=models.CASCADE, related_name='plans')
-    governorate = models.ManyToManyField(Governorate, related_name='shipping_plans')
+    governorates = models.ManyToManyField(Governorate, related_name='shipping_plans')
     base_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Base Price"))
     estimated_days = models.PositiveIntegerField(verbose_name=_("Estimated Delivery Days"))
     is_active = models.BooleanField(default=True, verbose_name=_("Active"))
@@ -86,10 +89,12 @@ class ShippingPlan(models.Model):
     class Meta:
         verbose_name = _("Shipping Plan")
         verbose_name_plural = _("Shipping Plans")
-    
+
+
     def __str__(self):
-        return f"{self.company.name} - {', '.join(gov.name_ar for gov in self.governorate.all())} - {self.base_price} EGP"
-        
+        governorates = self.governorates.values_list("name_ar", flat=True)
+        return f"{self.company.company_name} - {', '.join(governorates)} - {self.base_price} EGP"
+
 class WeightPricing(models.Model):
     plan = models.OneToOneField(ShippingPlan, on_delete=models.CASCADE, related_name='weight_pricing')
     min_weight = models.DecimalField(help_text="Minimum weight in kg, null if not applicable", max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Minimum Weight (kg)"))
