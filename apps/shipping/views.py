@@ -107,30 +107,15 @@ class ShippingPlanViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return ShippingPlan.objects.filter(company__user=self.request.user, company__is_verified=True, is_active=True)
-    
+        return ShippingPlan.objects.filter(
+            company__user=self.request.user,
+            company__is_verified=True,
+            is_active=True
+        )
+
     def perform_create(self, serializer):
         company = ShippingCompany.objects.filter(user=self.request.user, is_verified=True).first()
         if not company:
             raise PermissionError("You must be a verified shipping company to create a shipping plan.")
         serializer.save(company=company)
 
-class WeightPricingViewSet(viewsets.ModelViewSet):
-    serializer_class = WeightPricingSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        # Only allow access to WeightPricing for ShippingPlans owned by the current user
-        return WeightPricing.objects.filter(plan__company__user=self.request.user)
-    
-    def perform_create(self, serializer):
-        plan_id = self.request.data.get("plan")
-        try:
-            company = ShippingCompany.objects.get(user=self.request.user, is_verified=True)
-            plan = ShippingPlan.objects.get(id=plan_id, company=company)
-            print(plan,"--------------------")
-        except ShippingPlan.DoesNotExist:
-            raise PermissionError("You can only add weight pricing to your own verified shipping plans.")
-        serializer.save(plan=plan)
-    
- 

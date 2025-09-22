@@ -51,37 +51,70 @@ class ShippingCompanySerializer(serializers.ModelSerializer):
 class WeightPricingSerializer(serializers.ModelSerializer):
     class Meta:
         model = WeightPricing
-        fields = "__all__"
-        read_only_fields = ("created_at", "updated_at")
-
+        fields = ["min_weight", "price_per_kilo"]
 
 
 class ShippingPlanSerializer(serializers.ModelSerializer):
-    
+    # input: IDs فقط
+    governorates = serializers.PrimaryKeyRelatedField(
+        queryset=Governorate.objects.all(),
+        many=True
+    )
+
+    # output: تفاصيل كاملة
+    company_detail = ShippingCompanySerializer(source="company", read_only=True)
+    governorates_detail = GovernorateSerializer(source="governorates", many=True, read_only=True)
+    weight_pricing = WeightPricingSerializer(required=False)
+
     class Meta:
         model = ShippingPlan
-        fields = ["company", "governorates", "estimated_days", "base_price", "weight_pricing", "is_active", "created_at"]
-        read_only_fields = ("company", "created_at", "is_active")
+        fields = [
+            "id",
+            "governorates",
+            "base_price",
+            "estimated_days",
+            "is_active",
+            "company_detail",
+            "governorates_detail",
+            "weight_pricing",
+        ]
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['company'] = instance.company.company_name
-        representation['governorates'] = [i.name_ar for i in instance.governorates.all()]
-        return representation
-    
-    def get_weight_pricing(self, obj):
-        if hasattr(obj, 'weight_pricing'):
-            return WeightPricingSerializer(obj.weight_pricing).data
-        return None
+    def create(self, validated_data):
+        # شيل weight_pricing من البيانات
+        weight_pricing_data = validated_data.pop("weight_pricing", None)
+        plan = super().create(validated_data)
 
+        # أنشئ WeightPricing لو موجود
+        if weight_pricing_data:
+            WeightPricing.objects.create(plan=plan, **weight_pricing_data)
+
+        return plan
+
+    def update(self, instance, validated_data):
+        # شيل weight_pricing من البيانات
+        weight_pricing_data = validated_data.pop("weight_pricing", None)
+        plan = super().update(instance, validated_data)
+
+        # عدّل أو أنشئ WeightPricing
+        if weight_pricing_data:
+            WeightPricing.objects.update_or_create(plan=plan, defaults=weight_pricing_data)
+
+        return plan
     def validate(self, data):
+        request = self.context["request"]
+
         company = (
-            data.get("company") 
-            or getattr(self.instance, "company", None)
-            or ShippingCompany.objects.filter(user=self.context["request"].user, is_verified=True).first()
+            getattr(self.instance, "company", None)
+            or ShippingCompany.objects.filter(user=request.user, is_verified=True).first()
         )
         estimated_days = data.get("estimated_days") or getattr(self.instance, "estimated_days", None)
-        governorates = data.get("governorates") or []
+
+        if "governorates" in data:
+            governorates = data["governorates"]
+        elif self.instance:
+            governorates = self.instance.governorates.all()
+        else:
+            governorates = []
 
         qs = ShippingPlan.objects.filter(
             company=company,
@@ -94,10 +127,10 @@ class ShippingPlanSerializer(serializers.ModelSerializer):
         conflict = qs.filter(governorates__in=governorates).distinct()
         if conflict.exists():
             gov_names = ", ".join(
-                conflict.values_list("governorates__name_ar", flat=True)
+                conflict.values_list("governorates__name_ar", flat=True).distinct()
             )
-            raise serializers.ValidationError(
-                f"A shipping plan for the same company with the same number of days already exists in the following governorates: {gov_names}"
-            )
+            raise serializers.ValidationError({
+                "governorates": f"A shipping plan for the same company and the same number of days already exists in the following governorates: {gov_names}"
+            })
 
         return data
