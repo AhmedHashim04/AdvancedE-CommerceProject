@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_URLCONF = "project.urls"
 
 WSGI_APPLICATION = "project.wsgi.application"
+ASGI_APPLICATION = "project.asgi.application"
 
 INSTALLED_APPS = [
     "django.contrib.sites",
@@ -32,6 +33,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+
+    "channel",
 
     "apps.accounts", 
     "apps.home",

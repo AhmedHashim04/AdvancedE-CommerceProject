@@ -25,6 +25,15 @@ CACHES = {
     }
 }
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
 LOGGING_DIR = BASE_DIR / 'logs'
 LOGGING_DIR.mkdir(exist_ok=True)
 
